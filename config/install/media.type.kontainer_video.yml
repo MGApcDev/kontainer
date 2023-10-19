@@ -1,0 +1,15 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - kontainer
+id: kontainer_video
+label: 'Kontainer Video'
+description: 'Kontainer sourced video'
+source: kontainer_video
+queue_thumbnail_downloads: false
+new_revision: true
+source_configuration:
+  source_field: field_media_kontainer_video
+field_map:
+  name: name

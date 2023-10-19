@@ -1,0 +1,9 @@
+kontainer-lib:
+  js:
+    js/kontainer.js: {}
+  dependencies:
+    - core/drupal
+    - core/once
+    - core/drupal.ajax
+    - core/drupalSettings
+# add Drupal settings dependency

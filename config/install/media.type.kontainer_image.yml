@@ -1,0 +1,15 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - kontainer
+id: kontainer_image
+label: 'Kontainer Image'
+description: 'Kontainer sourced image'
+source: kontainer_image
+queue_thumbnail_downloads: false
+new_revision: true
+source_configuration:
+  source_field: field_media_kontainer_image
+field_map:
+  name: name

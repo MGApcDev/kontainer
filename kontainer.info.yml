@@ -1,0 +1,8 @@
+name: Kontainer
+type: module
+description: Kontainer integration
+core_version_requirement: ^9 || ^10
+dependencies:
+  - drupal:field
+  - drupal:media
+configure: kontainer.admin.config

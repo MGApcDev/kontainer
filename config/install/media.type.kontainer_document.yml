@@ -1,0 +1,15 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - kontainer
+id: kontainer_document
+label: 'Kontainer Document'
+description: 'Kontainer sourced document'
+source: 'kontainer:document'
+queue_thumbnail_downloads: false
+new_revision: true
+source_configuration:
+  source_field: field_media_kontainer_document
+field_map:
+  name: name

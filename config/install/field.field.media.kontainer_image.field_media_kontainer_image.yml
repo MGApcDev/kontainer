@@ -1,0 +1,37 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.media.field_media_kontainer_image
+    - media.type.kontainer_image
+  module:
+    - image
+id: media.kontainer_image.field_media_kontainer_image
+field_name: field_media_kontainer_image
+entity_type: media
+bundle: kontainer_image
+label: 'Image (Kontainer)'
+description: ''
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:file'
+  handler_settings: {  }
+  file_directory: '[date:custom:Y]-[date:custom:m]'
+  file_extensions: 'psd arw cin cr2 crw dcr dng mos mrw nef orf raf raw rw2 sr2 x3f art bmp cgm cur cut dcm dcx dib emf ept exr fax fig fpx gif heic heif htm html ico jbg jng jpeg jpg k25 kdc mif mng mtv mvg otb pbm pcd pcx pdb pfa pfb pfm pgm pic pict pix png rla rle sct sfw sgi srf svg tga tif tiff tim ttf wbmp webp wmf wmz wpg xbm xcf xpm ai epi eps ps ps2 ps3'
+  max_filesize: ''
+  max_resolution: ''
+  min_resolution: ''
+  alt_field: true
+  alt_field_required: true
+  title_field: false
+  title_field_required: false
+  default_image:
+    uuid: null
+    alt: ''
+    title: ''
+    width: null
+    height: null
+field_type: image

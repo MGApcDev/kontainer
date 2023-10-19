@@ -1,0 +1,26 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.media.field_media_kontainer_video
+    - media.type.kontainer_video
+  module:
+    - file
+id: media.kontainer_video.field_media_kontainer_video
+field_name: field_media_kontainer_video
+entity_type: media
+bundle: kontainer_video
+label: 'Video (Kontainer)'
+description: ''
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:file'
+  handler_settings: {  }
+  file_directory: '[date:custom:Y]-[date:custom:m]'
+  file_extensions: 'webm mkv avi wmv mp4 m4p mp4v mpg mpeg mp2 mpe mpv mxf 3gp mov mp3 wav'
+  max_filesize: ''
+  description_field: false
+field_type: file

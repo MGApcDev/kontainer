@@ -1,0 +1,33 @@
+{
+    "name": "drupal/kontainer",
+    "description": "Kontainer integration",
+    "type": "drupal-module",
+    "keywords": ["Drupal", "Kontainer", "Media"],
+    "homepage": "https://www.drupal.org/project/kontainer",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+            "name": "Kontainer A/S",
+            "email": "support@kontainer.com",
+            "homepage": "https://kontainer.com"
+        },
+        {
+            "name": "AGILEDROP LTD.",
+            "email": "hello@agiledrop.com",
+            "homepage": "https://www.agiledrop.com/"
+        },
+        {
+            "name": "Domen Slogar (slogar32)",
+            "homepage": "https://www.drupal.org/u/slogar32",
+            "role": "Maintainer"
+        }
+    ],
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/kontainer",
+        "source": "https://git.drupalcode.org/project/kontainer"
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "drupal/core": "^9"
+    }
+}

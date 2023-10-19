@@ -1,0 +1,26 @@
+kontainer.settings:
+  type: config_object
+  label: 'Kontainer settings'
+  mapping:
+    kontainer_url:
+      type: string
+      label: 'Kontainer URL'
+    media_source:
+      type: string
+      label: 'Preferred media source:'
+
+kontainer.cdn_image_conversion.*:
+  type: config_entity
+  label: Cdn Image Conversion
+  mapping:
+    id:
+      type: string
+      label: ID
+    label:
+      type: label
+      label: Label
+    uuid:
+      type: string
+    description:
+      type: string
+#TODO add media source, formatter, widget schema, ...

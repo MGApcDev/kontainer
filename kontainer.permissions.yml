@@ -1,0 +1,6 @@
+administer kontainer settings:
+  title: 'Administer Kontainer settings'
+  description: 'Gives permission for changing the Kontainer module settings.'
+
+administer cdn_image_conversion:
+  title: 'Administer cdn image conversion'

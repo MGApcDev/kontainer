@@ -1,0 +1,48 @@
+kontainer.admin.config:
+  path: '/admin/config/media/kontainer'
+  defaults:
+    _form: '\Drupal\kontainer\Form\KontainerConfigForm'
+    _title: 'Kontainer configuration'
+  requirements:
+    _permission: 'administer Kontainer settings'
+
+kontainer.create_media:
+  path: '/admin/kontainer/create-media'
+  defaults:
+    _controller: '\Drupal\kontainer\Controller\KontainerController::createMedia'
+  requirements:
+    # todo Restrict direct URL entering.
+    _access: 'TRUE'
+    _format: json
+
+entity.cdn_image_conversion.collection:
+  path: '/admin/structure/cdn-image-conversion'
+  defaults:
+    _entity_list: 'cdn_image_conversion'
+    _title: 'Cdn Image Conversion configuration'
+  requirements:
+    _permission: 'administer cdn_image_conversion'
+
+entity.cdn_image_conversion.add_form:
+  path: '/admin/structure/cdn_image_conversion/add'
+  defaults:
+    _entity_form: 'cdn_image_conversion.add'
+    _title: 'Add a cdn image conversion'
+  requirements:
+    _permission: 'administer cdn_image_conversion'
+
+entity.cdn_image_conversion.edit_form:
+  path: '/admin/structure/cdn-image-conversion/{cdn_image_conversion}'
+  defaults:
+    _entity_form: 'cdn_image_conversion.edit'
+    _title: 'Edit a cdn image conversion'
+  requirements:
+    _permission: 'administer cdn_image_conversion'
+
+entity.cdn_image_conversion.delete_form:
+  path: '/admin/structure/cdn-image-conversion/{cdn_image_conversion}/delete'
+  defaults:
+    _entity_form: 'cdn_image_conversion.delete'
+    _title: 'Delete a cdn image conversion'
+  requirements:
+    _permission: 'administer cdn_image_conversion'

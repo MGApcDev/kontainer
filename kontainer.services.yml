@@ -1,0 +1,14 @@
+services:
+  kontainer_service:
+    class: Drupal\kontainer\Service\KontainerService
+    arguments:
+      - '@module_handler'
+      - '@config.factory'
+      - '@file_system'
+      - '@entity_type.manager'
+      - '@current_user'
+      - '@string_translation'
+      - '@logger.channel.kontainer'
+  logger.channel.kontainer:
+    parent: logger.channel_base
+    arguments: ['kontainer']

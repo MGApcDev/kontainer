@@ -1,0 +1,26 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.media.kontainer_file.field_media_kontainer_file
+    - media.type.kontainer_file
+  module:
+    - file
+id: media.kontainer_file.default
+targetEntityType: media
+bundle: kontainer_file
+mode: default
+content:
+  field_media_kontainer_file:
+    type: file_default
+    label: visually_hidden
+    settings:
+      use_description_as_link_text: true
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  created: true
+  name: true
+  thumbnail: true
+  uid: true

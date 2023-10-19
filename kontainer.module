@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * @file
+ * Drupal Module: Kontainer.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\kontainer\Service\KontainerServiceInterface;
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function kontainer_form_field_ui_field_storage_add_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Toggles field availability of custom field types from this module in the
+  // "Add a new field" select on the FieldStorageAddForm, based on the
+  // configured media source.
+  $kontainerMediaSource = \Drupal::config('kontainer.settings')->get('kontainer_media_source');
+  switch ($kontainerMediaSource) {
+    case KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE:
+      unset($form['add']['new_storage_type']['#options']['Reference']['kontainer_cdn']);
+      break;
+
+    case KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_CDN_URL:
+    default:
+      unset($form['add']['new_storage_type']['#options']['Reference']['kontainer_media_reference']);
+
+  }
+}
+
+/**
+ * Implements hook_field_formatter_info_alter().
+ */
+function kontainer_field_formatter_info_alter(array &$info) {
+  if (isset($info['entity_reference_entity_view'])) {
+    // Allows the "Rendered entity" formatter to be used on the
+    // "Kontainer Media Reference" field type.
+    $info['entity_reference_entity_view']['field_types'][] = 'kontainer_media_reference';
+  }
+}
