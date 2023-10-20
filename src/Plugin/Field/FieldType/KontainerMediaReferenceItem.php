@@ -31,7 +31,6 @@ class KontainerMediaReferenceItem extends EntityReferenceItem {
   public static function defaultStorageSettings() {
     return [
       'target_type' => 'media',
-      'kontainer_file_id' => NULL,
     ] + parent::defaultStorageSettings();
   }
 

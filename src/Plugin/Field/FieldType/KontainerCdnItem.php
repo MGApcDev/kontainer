@@ -6,6 +6,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\TypedData\DataDefinition;
+use Drupal\link\LinkItemInterface;
 use Drupal\link\Plugin\Field\FieldType\LinkItem;
 
 /**
@@ -31,13 +32,11 @@ class KontainerCdnItem extends LinkItem {
   /**
    * {@inheritdoc}
    */
-  public static function defaultStorageSettings() {
+  public static function defaultFieldSettings() {
     return [
-      'media_type' => '',
-      'alt' => '',
-      'kontainer_file_id' => NULL,
-      'base_uri' => '',
-    ] + parent::defaultStorageSettings();
+      'title' => DRUPAL_DISABLED,
+      'link_type' => LinkItemInterface::LINK_EXTERNAL,
+    ] + parent::defaultFieldSettings();
   }
 
   /**
