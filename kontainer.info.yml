@@ -1,7 +1,7 @@
 name: Kontainer
 type: module
 description: Kontainer integration
-core_version_requirement: ^9 || ^10
+core_version_requirement: ^9.1 || ^10
 dependencies:
   - drupal:field
   - drupal:media
