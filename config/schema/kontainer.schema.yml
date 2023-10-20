@@ -8,7 +8,6 @@ kontainer.settings:
     media_source:
       type: string
       label: 'Preferred media source:'
-
 kontainer.cdn_image_conversion.*:
   type: config_entity
   label: Cdn Image Conversion
@@ -23,4 +22,49 @@ kontainer.cdn_image_conversion.*:
       type: string
     description:
       type: string
-#TODO add media source, formatter, widget schema, ...
+    template_id:
+      type: integer
+    format:
+      type: string
+media.source.kontainer:*:
+  type: media.source.field_aware
+  label: 'Kontainer file asset media source configuration'
+media.source.kontainer_image:
+  type: media.source.field_aware
+  label: 'Kontainer image asset media source configuration'
+media.source.kontainer_video:
+  type: media.source.field_aware
+  label: 'Kontainer video asset media source configuration'
+field.widget.settings.kontainer_cdn:
+  type: mapping
+  label: 'Link format settings'
+  mapping:
+    placeholder_url:
+      type: string
+      label: 'Placeholder for URL'
+    placeholder_title:
+      type: label
+      label: 'Placeholder for link text'
+field.widget.settings.kontainer_media_reference:
+  type: mapping
+  label: 'Entity reference autocomplete display format settings'
+  mapping:
+    match_operator:
+      type: string
+      label: 'Autocomplete matching'
+    match_limit:
+      type: integer
+      label: 'Maximum number of autocomplete suggestions.'
+    size:
+      type: integer
+      label: 'Size of textfield'
+    placeholder:
+      type: label
+      label: 'Placeholder'
+field.formatter.settings.kontainer_cdn:
+  type: mapping
+  label: 'Kontainer CDN display format settings'
+  mapping:
+    image_conversion:
+      type: string
+      label: 'Image conversion'
