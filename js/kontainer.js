@@ -35,7 +35,6 @@ function postBack(data) {
       // will be imported.
       if (Array.isArray(json) === true) {
         json = json[0];
-        console.log(json);
       }
       let hiddenFields = activeEl.parentNode.querySelectorAll('input[type=hidden]');
       let url = json.url;
@@ -53,11 +52,16 @@ function postBack(data) {
     else {
       let url = drupalSettings.kontainer.createMediaPath;
       let ajax = Drupal.ajax({
-        url: Drupal.url(url),
+        url: Drupal.url(url) + '?token=' + drupalSettings.kontainer.token,
         type: 'post',
         dataType: 'json',
         contentType: 'application/json',
-        submit: data
+        submit: data,
+        element: activeEl.closest("td"),
+        progress: {
+          type: 'throbber',
+          message: Drupal.t('Downloading media from Kontainer...'),
+        }
       });
       ajax.execute().then(function (response) {
         activeEl.previousElementSibling.getElementsByTagName('input')[0].value = response.media_label + ' (' + response.media_id + ')';

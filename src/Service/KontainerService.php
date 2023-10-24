@@ -128,6 +128,7 @@ class KontainerService implements KontainerServiceInterface {
     if (empty(self::MEDIA_TYPES_MAPPING[$assetData['type']])) {
       throw new \Exception('Unsupported asset type.');
     }
+    $this->checkAccess(self::MEDIA_TYPES_MAPPING[$assetData['type']]);
     $mediaType = $this->getMediaType($assetType);
     $sourceFieldName = $this->getMediaTypeSourceField($mediaType);
     $this->validateMediaTypeExtensions($assetType, $sourceFieldName, $assetExtension);
@@ -403,6 +404,20 @@ class KontainerService implements KontainerServiceInterface {
       'id' => $media->id(),
       'label' => $media->label(),
     ];
+  }
+
+  /**
+   * Checks if the current user has the permission to create the media type.
+   *
+   * @param string $mediaType
+   *   Media type machine name.
+   *
+   * @throws \Exception
+   */
+  private function checkAccess(string $mediaType): void {
+    if (!$this->currentUser->hasPermission("create $mediaType media")) {
+      throw new \Exception('User does not have the permission to create the Kontainer media of this type in Drupal.');
+    }
   }
 
 }

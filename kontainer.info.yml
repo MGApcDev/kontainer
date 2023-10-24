@@ -4,5 +4,7 @@ description: Kontainer integration
 core_version_requirement: ^9.1 || ^10
 dependencies:
   - drupal:field
+  - drupal:file
+  - drupal:image
   - drupal:media
 configure: kontainer.admin.config

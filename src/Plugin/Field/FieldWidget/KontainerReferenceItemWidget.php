@@ -2,7 +2,9 @@
 
 namespace Drupal\kontainer\Plugin\Field\FieldWidget;
 
-use Drupal\Component\Utility\Html;
+use Drupal\Core\Access\CsrfTokenGenerator;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
@@ -48,6 +50,13 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
   protected KontainerServiceInterface $kontainerService;
 
   /**
+   * Service "csrf_token".
+   *
+   * @var \Drupal\Core\Access\CsrfTokenGenerator
+   */
+  protected CsrfTokenGenerator $csrfTokenGenerator;
+
+  /**
    * Constructs a new ModerationStateWidget object.
    *
    * @param string $plugin_id
@@ -66,6 +75,8 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
    *   Service "router.route_provider".
    * @param \Drupal\kontainer\Service\KontainerServiceInterface $kontainerService
    *   Service "kontainer_service".
+   * @param \Drupal\Core\Access\CsrfTokenGenerator $csrfTokenGenerator
+   *   Service "csrf_token".
    */
   public function __construct(
     $plugin_id,
@@ -75,12 +86,14 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
     array $third_party_settings,
     ConfigFactoryInterface $configFactory,
     RouteProviderInterface $routeProvider,
-    KontainerServiceInterface $kontainerService
+    KontainerServiceInterface $kontainerService,
+    CsrfTokenGenerator $csrfTokenGenerator
   ) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings);
     $this->configFactory = $configFactory;
     $this->routeProvider = $routeProvider;
     $this->kontainerService = $kontainerService;
+    $this->csrfTokenGenerator = $csrfTokenGenerator;
   }
 
   /**
@@ -95,7 +108,8 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
       $configuration['third_party_settings'],
       $container->get('config.factory'),
       $container->get('router.route_provider'),
-      $container->get('kontainer_service')
+      $container->get('kontainer_service'),
+      $container->get('csrf_token')
     );
   }
 
@@ -108,11 +122,14 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
       $createKontainerMediaPath = $this->routeProvider
         ->getRouteByName('kontainer.create_media')
         ->getPath();
+      $createKontainerMediaPathTrimmed = ltrim($createKontainerMediaPath, '/');
+      $fieldMachineName = $items->getName();
+      $csrfToken = $this->csrfTokenGenerator->get($createKontainerMediaPathTrimmed);
       $element['target_id']['#attributes']['readonly'] = 'readonly';
+      $element['target_id']['#attributes']['data-kontainer-selector'] = 'kontainer-reference-' . $fieldMachineName . '-' . $delta;
       $element['kontainer_button'] = [
         '#type' => 'button',
         '#value' => $this->t('Kontainer select'),
-        '#id' => Html::getUniqueId('open-kontainer'),
         '#attributes' => [
           'data-kontainer-selector' => 'open-kontainer',
           'data-kontainer-type' => 'media',
@@ -121,12 +138,13 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
         '#attached' => [
           'library' => 'kontainer/kontainer-lib',
           'drupalSettings' => [
-            'ajaxTrustedUrl' => [$createKontainerMediaPath => TRUE],
+            'ajaxTrustedUrl' => [$createKontainerMediaPath . '?token=' . $csrfToken => TRUE],
             'kontainer' => [
               'kontainerUrl' => $this->configFactory
                 ->get('kontainer.settings')
                 ->get('kontainer_url'),
-              'createMediaPath' => ltrim($createKontainerMediaPath, '/'),
+              'token' => $csrfToken,
+              'createMediaPath' => $createKontainerMediaPathTrimmed,
             ],
           ],
         ],
@@ -134,9 +152,24 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
       ];
       $element['kontainer_file_id'] = [
         '#type' => 'hidden',
-        '#id' => Html::getUniqueId('kontainer-file-id'),
+        '#attributes' => [
+          'data-kontainer-selector' => 'kontainer-file-id-' . $fieldMachineName . '-' . $delta,
+        ],
         '#weight' => 20,
         '#default_value' => $items[$delta]->getValue()['kontainer_file_id'] ?? NULL,
+      ];
+      $element['remove_button'] = [
+        '#type' => 'button',
+        '#value' => t('Remove'),
+        '#name' => 'reference_remove_button' . $delta,
+        '#attributes' => [
+          'field-machine-name' => $fieldMachineName,
+          'widget-delta' => $delta,
+          'data-kontainer-selector' => 'kontainer-remove-button',
+        ],
+        '#ajax' => ['callback' => [$this, 'removeValue']],
+        '#weight' => 30,
+        '#limit_validation_errors' => [],
       ];
     }
     catch (RouteNotFoundException $e) {
@@ -144,6 +177,19 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
     }
 
     return $element;
+  }
+
+  /**
+   * Submit callback to clear the widget field values.
+   */
+  public function removeValue(array &$form, FormStateInterface $form_state): AjaxResponse {
+    $button = $form_state->getTriggeringElement();
+    $delta = $button['#attributes']['widget-delta'];
+    $fieldMachineName = $button['#attributes']['field-machine-name'];
+    $ajaxResponse = new AjaxResponse();
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-reference-$fieldMachineName-$delta\"]", 'val', ['']));
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-file-id-$fieldMachineName-$delta\"]", 'val', ['']));
+    return $ajaxResponse;
   }
 
 }

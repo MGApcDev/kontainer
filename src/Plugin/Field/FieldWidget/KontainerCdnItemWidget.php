@@ -2,7 +2,8 @@
 
 namespace Drupal\kontainer\Plugin\Field\FieldWidget;
 
-use Drupal\Component\Utility\Html;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
@@ -90,12 +91,12 @@ class KontainerCdnItemWidget extends LinkWidget {
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $element = parent::formElement($items, $delta, $element, $form, $form_state);
-
+    $fieldMachineName = $items->getName();
     $element['uri']['#attributes']['readonly'] = 'readonly';
+    $element['uri']['#attributes']['data-kontainer-selector'] = 'kontainer-cdn-' . $fieldMachineName . '-' . $delta;
     $element['kontainer_button'] = [
       '#type' => 'button',
       '#value' => $this->t('Kontainer select'),
-      '#id' => Html::getUniqueId('open-kontainer'),
       '#attributes' => [
         'data-kontainer-selector' => 'open-kontainer',
         'data-kontainer-type' => 'cdn',
@@ -115,30 +116,67 @@ class KontainerCdnItemWidget extends LinkWidget {
     ];
     $element['media_type'] = [
       '#type' => 'hidden',
-      '#id' => Html::getUniqueId('kontainer-cdn-media-type'),
+      '#attributes' => [
+        'data-kontainer-selector' => 'kontainer-media-type-' . $fieldMachineName . '-' . $delta,
+      ],
       '#weight' => 20,
       '#default_value' => $items[$delta]->getValue()['media_type'] ?? NULL,
     ];
     $element['alt'] = [
       '#type' => 'hidden',
-      '#id' => Html::getUniqueId('kontainer-cdn-alt'),
+      '#attributes' => [
+        'data-kontainer-selector' => 'kontainer-alt-' . $fieldMachineName . '-' . $delta,
+      ],
       '#weight' => 30,
       '#default_value' => $items[$delta]->getValue()['alt'] ?? NULL,
     ];
     $element['kontainer_file_id'] = [
       '#type' => 'hidden',
-      '#id' => Html::getUniqueId('kontainer-cdn-file-id'),
+      '#attributes' => [
+        'data-kontainer-selector' => 'kontainer-file-id-' . $fieldMachineName . '-' . $delta,
+      ],
       '#weight' => 60,
       '#default_value' => $items[$delta]->getValue()['kontainer_file_id'] ?? NULL,
     ];
     $element['base_uri'] = [
       '#type' => 'hidden',
-      '#id' => Html::getUniqueId('kontainer-cdn-base-uri'),
+      '#attributes' => [
+        'data-kontainer-selector' => 'kontainer-base-uri-' . $fieldMachineName . '-' . $delta,
+      ],
       '#weight' => 70,
       '#default_value' => $items[$delta]->getValue()['base_uri'] ?? NULL,
     ];
+    $element['remove_button'] = [
+      '#type' => 'button',
+      '#value' => t('Remove'),
+      '#name' => 'cdn_remove_button' . $delta,
+      '#attributes' => [
+        'field-machine-name' => $fieldMachineName,
+        'widget-delta' => $delta,
+        'data-kontainer-selector' => 'kontainer-remove-button',
+      ],
+      '#ajax' => ['callback' => [$this, 'removeValue']],
+      '#weight' => 80,
+      '#limit_validation_errors' => [],
+    ];
     unset($element['uri']['#description']);
     return $element;
+  }
+
+  /**
+   * Submit callback to clear the widget field values.
+   */
+  public function removeValue(array &$form, FormStateInterface $form_state): AjaxResponse {
+    $button = $form_state->getTriggeringElement();
+    $delta = $button['#attributes']['widget-delta'];
+    $fieldMachineName = $button['#attributes']['field-machine-name'];
+    $ajaxResponse = new AjaxResponse();
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-cdn-$fieldMachineName-$delta\"]", 'val', ['']));
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-media-type-$fieldMachineName-$delta\"]", 'val', ['']));
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-alt-$fieldMachineName-$delta\"]", 'val', ['']));
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-file-id-$fieldMachineName-$delta\"]", 'val', ['']));
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-base-uri-$fieldMachineName-$delta\"]", 'val', ['']));
+    return $ajaxResponse;
   }
 
 }

@@ -11,9 +11,8 @@ kontainer.create_media:
   defaults:
     _controller: '\Drupal\kontainer\Controller\KontainerController::createMedia'
   requirements:
-    # todo Restrict direct URL entering.
-    _access: 'TRUE'
     _format: json
+    _csrf_token: 'TRUE'
 
 entity.cdn_image_conversion.collection:
   path: '/admin/structure/cdn-image-conversion'

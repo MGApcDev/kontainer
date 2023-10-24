@@ -72,16 +72,16 @@ class KontainerCdnFormatter extends FormatterBase {
    *   Kontainer channel logger instance.
    */
   public function __construct(
-      $plugin_id,
-      $plugin_definition,
-      FieldDefinitionInterface $field_definition,
-      array $settings,
-      $label,
-      $view_mode,
-      array $third_party_settings,
-      AccountProxyInterface $currentUser,
-      KontainerServiceInterface $kontainerService,
-      LoggerInterface $logger
+    $plugin_id,
+    $plugin_definition,
+    FieldDefinitionInterface $field_definition,
+    array $settings,
+    $label,
+    $view_mode,
+    array $third_party_settings,
+    AccountProxyInterface $currentUser,
+    KontainerServiceInterface $kontainerService,
+    LoggerInterface $logger
   ) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
     $this->currentUser = $currentUser;
@@ -153,7 +153,6 @@ class KontainerCdnFormatter extends FormatterBase {
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = [];
-
     // Add one image per item.
     foreach ($items as $delta => $item) {
       switch ($item->media_type) {
@@ -166,8 +165,9 @@ class KontainerCdnFormatter extends FormatterBase {
               $this->kontainerService->logException($e);
             }
           }
-          // @todo Fetch image width and height from the download template via
-          // @todo API, or just add them to the config entity as extra values.
+          // The templates have different options for the resize setting for the
+          // image output, so width and height aren't always specified, hence
+          // they are not added as attributes to the image template.
           $elements[$delta] = [
             '#theme' => 'image',
             '#uri' => $uri ?? $item->uri,

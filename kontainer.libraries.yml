@@ -6,4 +6,3 @@ kontainer-lib:
     - core/once
     - core/drupal.ajax
     - core/drupalSettings
-# add Drupal settings dependency
