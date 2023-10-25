@@ -57,7 +57,7 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
   protected CsrfTokenGenerator $csrfTokenGenerator;
 
   /**
-   * Constructs a new ModerationStateWidget object.
+   * Class constructor.
    *
    * @param string $plugin_id
    *   Plugin id.
@@ -160,8 +160,8 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
       ];
       $element['remove_button'] = [
         '#type' => 'button',
-        '#value' => t('Remove'),
-        '#name' => 'reference_remove_button' . $delta,
+        '#value' => $this->t('Remove'),
+        '#name' => 'reference_remove_button_' . $fieldMachineName . $delta,
         '#attributes' => [
           'field-machine-name' => $fieldMachineName,
           'widget-delta' => $delta,

@@ -30,10 +30,10 @@ class KontainerLinkConstraintValidator extends ConstraintValidator implements Co
   protected KontainerServiceInterface $kontainerService;
 
   /**
-   * Service "config.factory".
+   * Class constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   The workspace association service.
+   *   Service "config.factory".
    * @param \Drupal\kontainer\Service\KontainerServiceInterface $kontainerService
    *   Service "kontainer_service".
    */

@@ -40,7 +40,7 @@ class KontainerCdnItemWidget extends LinkWidget {
   protected ConfigFactoryInterface $configFactory;
 
   /**
-   * Constructs a new ModerationStateWidget object.
+   * Class constructor.
    *
    * @param string $plugin_id
    *   Plugin id.
@@ -94,6 +94,7 @@ class KontainerCdnItemWidget extends LinkWidget {
     $fieldMachineName = $items->getName();
     $element['uri']['#attributes']['readonly'] = 'readonly';
     $element['uri']['#attributes']['data-kontainer-selector'] = 'kontainer-cdn-' . $fieldMachineName . '-' . $delta;
+    unset($element['uri']['#description']);
     $element['kontainer_button'] = [
       '#type' => 'button',
       '#value' => $this->t('Kontainer select'),
@@ -148,8 +149,8 @@ class KontainerCdnItemWidget extends LinkWidget {
     ];
     $element['remove_button'] = [
       '#type' => 'button',
-      '#value' => t('Remove'),
-      '#name' => 'cdn_remove_button' . $delta,
+      '#value' => $this->t('Remove'),
+      '#name' => 'cdn_remove_button_' . $fieldMachineName . $delta,
       '#attributes' => [
         'field-machine-name' => $fieldMachineName,
         'widget-delta' => $delta,
@@ -159,7 +160,6 @@ class KontainerCdnItemWidget extends LinkWidget {
       '#weight' => 80,
       '#limit_validation_errors' => [],
     ];
-    unset($element['uri']['#description']);
     return $element;
   }
 
