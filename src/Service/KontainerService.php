@@ -191,7 +191,7 @@ class KontainerService implements KontainerServiceInterface {
       Url::fromRoute('entity.cdn_image_conversion.collection')
     );
     return $cdnImageStylesLink->toRenderable() + [
-      '#access' => $this->currentUser->hasPermission('administer image styles'),
+      '#access' => $this->currentUser->hasPermission('administer cdn_image_conversion'),
     ];
   }
 
@@ -211,7 +211,7 @@ class KontainerService implements KontainerServiceInterface {
     }
 
     if (empty($options)) {
-      $options[''] = t('No defined styles');
+      $options[''] = t('No defined conversions');
     }
     return $options;
   }
