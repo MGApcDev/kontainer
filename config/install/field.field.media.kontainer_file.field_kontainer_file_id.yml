@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.media.field_kontainer_file_id
+    - media.type.kontainer_file
+id: media.kontainer_file.field_kontainer_file_id
+field_name: field_kontainer_file_id
+entity_type: media
+bundle: kontainer_file
+label: 'Kontainer file id'
+description: 'The Kontainer file id cannot be edited.'
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

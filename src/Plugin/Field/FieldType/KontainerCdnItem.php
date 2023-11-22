@@ -85,12 +85,12 @@ class KontainerCdnItem extends LinkItem {
 
     $schema['columns'] = [
       'media_type' => [
-        'description' => "The Kontainer media type.",
+        'description' => 'The Kontainer media type.',
         'type' => 'varchar',
         'length' => 512,
       ],
       'alt' => [
-        'description' => "Alternative image text, for the image's 'alt' attribute.",
+        'description' => 'Alternative image text, for the image\'s \'alt\' attribute.',
         'type' => 'varchar',
         'length' => 512,
       ],

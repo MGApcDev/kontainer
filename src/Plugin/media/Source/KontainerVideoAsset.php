@@ -16,7 +16,7 @@ use Drupal\media\Plugin\media\Source\VideoFile;
  *   default_thumbnail_filename = "generic.png",
  * )
  */
-class KontainerVideoAsset extends VideoFile {
+class KontainerVideoAsset extends VideoFile implements KontainerMediaSourceInterface {
 
   /**
    * {@inheritdoc}

@@ -2,6 +2,7 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.media.kontainer_document.field_kontainer_file_id
     - field.field.media.kontainer_document.field_media_kontainer_document
     - media.type.kontainer_document
   module:
@@ -21,6 +22,7 @@ content:
     region: content
 hidden:
   created: true
+  field_kontainer_file_id: true
   name: true
   thumbnail: true
   uid: true

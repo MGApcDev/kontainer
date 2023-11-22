@@ -8,6 +8,12 @@ kontainer.settings:
     media_source:
       type: string
       label: 'Preferred media source:'
+    integration_id:
+      type: string
+      label: 'Integration ID'
+    integration_secret:
+      type: string
+      label: 'Integration secret'
 kontainer.cdn_image_conversion.*:
   type: config_entity
   label: Cdn Image Conversion

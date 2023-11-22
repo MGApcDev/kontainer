@@ -2,6 +2,9 @@
 
 namespace Drupal\kontainer\Service;
 
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\node\NodeInterface;
+
 /**
  * Kontainer service interface.
  */
@@ -113,7 +116,7 @@ interface KontainerServiceInterface {
   public function getMediaTypesWithDependency(string $moduleName): array;
 
   /**
-   * Generates a render array with the link to Kontainer image styles.
+   * Generates a render array with the link to Kontainer image conversions.
    *
    * @return array
    *   Render array.
@@ -138,32 +141,108 @@ interface KontainerServiceInterface {
   public function getCdnImageConversionsOptions(bool $includeEmpty = TRUE): array;
 
   /**
-   * Returns field formatter settings for a field instance.
-   *
-   * @param string $entityFormDisplayId
-   *   Entity form display id.
-   * @param string $fieldName
-   *   Field name.
-   * @param string|null $settingName
-   *   Field formatter setting name.
-   *
-   * @return array|string
-   *   Array of settings or specific settings if $settingsName is provided.
-   *   NULL if no settings is present.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   *
-   * @note Currently not used, may be used in future implementations.
-   */
-  public function getFieldFormatterSettings(string $entityFormDisplayId, string $fieldName, string $settingName = NULL);
-
-  /**
    * Formats the exception message and logs it to the Kontainer channel.
    *
    * @param \Exception $e
    *   The exception to be logged.
    */
   public function logException(\Exception $e): void;
+
+  /**
+   * Returns the Kontainer targets of an entity, also if nested in paragraphs.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The (current) source entity.
+   * @param bool $cdn
+   *   If TRUE, CDN URL targets are fetched, media storage targets otherwise.
+   *
+   * @return array
+   *   Array with Kontainer target ids, if there are any.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getNestedTargets(ContentEntityInterface $entity, bool $cdn = FALSE): array;
+
+  /**
+   * Gets all the source (node) ids, also for nested paragraphs.
+   *
+   * @param array $directSources
+   *   Array with source data.
+   *
+   * @return array
+   *   Array with source ids.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getMasterSourceIds(array $directSources): array;
+
+  /**
+   * Rebuilds the Kontainer usage for Kontainer media per node.
+   *
+   * Tracks usage for the source entity. It is called, when the source (node)
+   * entity is being created or updated. Saved data to Drupal state.
+   *
+   * @param array $mediaTargets
+   *   Array with media targets on the parent node.
+   * @param \Drupal\node\NodeInterface $node
+   *   The node entity.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityMalformedException
+   */
+  public function trackMediaStorageUsage(array $mediaTargets, NodeInterface $node): void;
+
+  /**
+   * Rebuilds the Kontainer usage for CDN URLs per node.
+   *
+   * Tracks usage for the source entity. It is called, when the source (node)
+   * entity is being created or updated. Saves data to Drupal state.
+   *
+   * @param array $cdnTargets
+   *   Array with cdn targets on the parent node (Kontainer file id).
+   * @param \Drupal\node\NodeInterface $node
+   *   The node entity.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityMalformedException
+   */
+  public function trackCdnUsage(array $cdnTargets, NodeInterface $node): void;
+
+  /**
+   * Removes usage for the source (node) entity, when it is being deleted.
+   *
+   * @param int $deletedSourceId
+   *   The id of the node (source), that is being deleted.
+   * @param string $mediaSource
+   *   The media source for which to delete the usage.
+   */
+  public function deleteSourceUsage(int $deletedSourceId, string $mediaSource): void;
+
+  /**
+   * Removes usage for the target entities on source entities.
+   *
+   * @param array $sourceIds
+   *   The ids of the sources (nodes), where the target (media) usage is
+   *   present.
+   * @param int $targetId
+   *   The id of the target (media), that is being deleted.
+   */
+  public function deleteTargetUsage(array $sourceIds, int $targetId): void;
+
+  /**
+   * Formats the Kontainer usage, removes the in-between entity id array keys.
+   *
+   * @param array $kontainerUsage
+   *   Kontainer usage from Drupal state.
+   *
+   * @return array
+   *   Array without the in-between keys, that are needed for updating the
+   *   Kontainer usage.
+   */
+  public function formatUsageData(array $kontainerUsage): array;
 
 }

@@ -17,7 +17,7 @@ use Drupal\media\Plugin\media\Source\Image;
  *   thumbnail_alt_metadata_attribute = "thumbnail_alt_value"
  * )
  */
-class KontainerImageAsset extends Image {
+class KontainerImageAsset extends Image implements KontainerMediaSourceInterface {
 
   /**
    * {@inheritdoc}

@@ -1,7 +1,6 @@
-// @todo "Drupalize" it (behaviors, ...).
-let activeEl = null;
-(function (Drupal, once) {
+(function (Drupal, once, drupalSettings) {
   'use strict';
+  let activeEl = null;
   Drupal.behaviors.kontainer = {
     attach: function (context) {
       if (window.addEventListener) {
@@ -20,58 +19,59 @@ let activeEl = null;
       });
     }
   };
-})(Drupal, once);
-function receiveMessage(event) {
-  if (event) {
-    postBack(event.data);
-  }
-}
-function postBack(data) {
-  if (data != '' && data != null) {
-    if (activeEl.getAttribute('data-kontainer-type') === 'cdn') {
-      let json = JSON.parse(data);
-      // In this phase importing of multiple items at once is not yet
-      // supported. If the array consists of multiple items, only the first one
-      // will be imported.
-      if (Array.isArray(json) === true) {
-        json = json[0];
-      }
-      let hiddenFields = activeEl.parentNode.querySelectorAll('input[type=hidden]');
-      let url = json.url;
-      if (!!json.thumbnailUrl) {
-        url = json.thumbnailUrl;
-      }
-      activeEl.previousElementSibling.getElementsByTagName('input')[0].value = url;
-      hiddenFields[0].value = json.type;
-      hiddenFields[2].value = json.fileId;
-      hiddenFields[3].value = json.urlBaseName;
-      if (json.type === 'image') {
-        hiddenFields[1].value = json.alt;
-      }
+  function receiveMessage(event) {
+    if (event) {
+      postBack(event.data);
     }
-    else {
-      let url = drupalSettings.kontainer.createMediaPath;
-      let ajax = Drupal.ajax({
-        url: Drupal.url(url) + '?token=' + drupalSettings.kontainer.token,
-        type: 'post',
-        dataType: 'json',
-        contentType: 'application/json',
-        submit: data,
-        element: activeEl,
-        progress: {
-          type: 'throbber',
-          message: Drupal.t('Downloading media from Kontainer...'),
+  }
+  function postBack(data) {
+    if (data !== '' && data !== null) {
+      if (activeEl.getAttribute('data-kontainer-type') === 'cdn') {
+        let json = JSON.parse(data);
+        // In this phase importing of multiple items at once is not yet
+        // supported. If the array consists of multiple items, only the first one
+        // will be imported.
+        if (Array.isArray(json) === true) {
+          json = json[0];
         }
-      });
-      ajax.execute().then(function (response) {
-        activeEl.previousElementSibling.getElementsByTagName('input')[0].value = response.media_label + ' (' + response.media_id + ')';
-        activeEl.nextElementSibling.value = response.kontainer_file_id;
-      });
+        let hiddenFields = activeEl.parentNode.querySelectorAll('input[type=hidden]');
+        let url = json.url;
+        if (!!json.thumbnailUrl) {
+          url = json.thumbnailUrl;
+        }
+        activeEl.previousElementSibling.getElementsByTagName('input')[0].value = url;
+        hiddenFields[0].value = json.type;
+        hiddenFields[2].value = json.fileId;
+        hiddenFields[3].value = json.urlBaseName;
+        if (json.type === 'image') {
+          hiddenFields[1].value = json.alt;
+        }
+      }
+      else {
+        let url = drupalSettings.kontainer.createMediaPath;
+        let ajax = Drupal.ajax({
+          url: Drupal.url(url) + '?token=' + drupalSettings.kontainer.token,
+          type: 'post',
+          dataType: 'json',
+          contentType: 'application/json',
+          submit: data,
+          element: activeEl.closest('td'),
+          progress: {
+            type: 'throbber',
+            message: Drupal.t('Downloading media from Kontainer...'),
+          }
+        });
+        ajax.execute().then(function (response) {
+          if (response.media_label !== null && response.media_id !== null && response.kontainer_file_id !== null) {
+            activeEl.previousElementSibling.getElementsByTagName('input')[0].value = response.media_label + ' (' + response.media_id + ')';
+            activeEl.nextElementSibling.value = response.kontainer_file_id;
+          }
+          else {
+            console.error(Drupal.t('Could not fetch all the data from the response.'));
+          }
+        });
+      }
     }
+    self.close();
   }
-  self.close();
-}
-
-function receive(id) {
-  document.getElementById('url').value = id;
-}
+})(Drupal, once, drupalSettings);

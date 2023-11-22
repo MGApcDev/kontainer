@@ -7,12 +7,22 @@ kontainer.admin.config:
     _permission: 'administer Kontainer settings'
 
 kontainer.create_media:
-  path: '/admin/kontainer/create-media'
+  path: '/kontainer/create-media'
   defaults:
     _controller: '\Drupal\kontainer\Controller\KontainerController::createMedia'
   requirements:
     _format: json
     _csrf_token: 'TRUE'
+
+kontainer.usage:
+  path: '/kontainer/api/file-usages'
+  defaults:
+    _controller: '\Drupal\kontainer\Controller\KontainerController::sendUsage'
+  options:
+    _auth: ['kontainer_auth']
+  requirements:
+    _format: json
+    _role: 'kontainer_auth_role'
 
 entity.cdn_image_conversion.collection:
   path: '/admin/structure/cdn-image-conversion'

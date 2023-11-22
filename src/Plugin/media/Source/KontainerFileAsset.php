@@ -18,7 +18,7 @@ use Drupal\media\Plugin\media\Source\File;
  * )
  * @todo Add kontainer_file_id to file/media directly -> usage API.
  */
-class KontainerFileAsset extends File {
+class KontainerFileAsset extends File implements KontainerMediaSourceInterface {
 
   /**
    * {@inheritdoc}

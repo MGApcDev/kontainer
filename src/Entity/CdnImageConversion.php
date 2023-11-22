@@ -51,7 +51,7 @@ use Drupal\kontainer\CdnImageConversionInterface;
  *     "format"
  *   }
  * )
- * @todo Possible feature: fetch and create from templates via API.
+ * @todo Possible feature: fetch and create from templates via Kontainer API.
  */
 class CdnImageConversion extends ConfigEntityBase implements CdnImageConversionInterface {
 

@@ -1,10 +1,12 @@
 name: Kontainer
 type: module
-description: Kontainer integration
+package: Media
+description: 'Kontainer integration'
 core_version_requirement: ^9.1 || ^10
 dependencies:
   - drupal:field
   - drupal:file
   - drupal:image
   - drupal:media
+  - entity_usage:entity_usage (>= 8.x-2.x)
 configure: kontainer.admin.config

@@ -6,6 +6,7 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\kontainer\Service\KontainerServiceInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -30,8 +31,8 @@ class KontainerConfigForm extends ConfigFormBase {
    *   Service "kontainer_service".
    */
   public function __construct(
-      ConfigFactoryInterface $configFactory,
-      KontainerServiceInterface $kontainerService
+    ConfigFactoryInterface $configFactory,
+    KontainerServiceInterface $kontainerService
   ) {
     parent::__construct($configFactory);
     $this->kontainerService = $kontainerService;
@@ -68,7 +69,6 @@ class KontainerConfigForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('kontainer.settings');
-
     $form['kontainer_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Kontainer URL'),
@@ -90,7 +90,42 @@ class KontainerConfigForm extends ConfigFormBase {
     if ($mediaSource === KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_CDN_URL) {
       $form['kontainer_media_source']['#description'] = $this->kontainerService->getCdnImageConversionsRenderLink();
     }
-
+    $form['usage_api_info'] = [
+      '#markup' => '<h3>' . $this->t('File usage tracking') . '</h3><div>' .
+      $this->t('In your Kontainer, insert this URL to create a Drupal integration:')
+      . '</div>',
+    ];
+    $form['file_usage_url'] = [
+      '#type' => 'textfield',
+      '#attributes' => [
+        'readonly' => 'readonly',
+      ],
+      '#id' => 'kontainer-file-usage-url',
+      '#default_value' => Url::fromRoute('kontainer.usage', [], ['absolute' => TRUE])->toString(),
+    ];
+    $form['file_usage_url_button'] = [
+      '#type' => 'button',
+      '#value' => $this->t('Copy URL to clipboard'),
+      '#id' => 'kontainer-file-usage-url-button',
+      '#attached' => [
+        'library' => 'kontainer/kontainer-copy-to-clipboard',
+      ],
+      '#limit_validation_errors' => [],
+    ];
+    $form['integration_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Integration ID'),
+      '#default_value' => $config->get('integration_id'),
+      '#description' => $this->t('Enter your integration ID for the usage API.'),
+      '#required' => TRUE,
+    ];
+    $form['integration_secret'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Integration secret'),
+      '#default_value' => $config->get('integration_secret'),
+      '#description' => $this->t('Enter your integration secret for the usage API.'),
+      '#required' => TRUE,
+    ];
     return parent::buildForm($form, $form_state);
   }
 
@@ -101,7 +136,7 @@ class KontainerConfigForm extends ConfigFormBase {
     if (!UrlHelper::isValid($form_state->getValue('kontainer_url'))) {
       $form_state->setErrorByName(
         'invalid_url',
-        $this->t('Provided URL is not valid.')
+        $this->t('The provided URL is not valid.')
       );
     }
   }
@@ -113,8 +148,9 @@ class KontainerConfigForm extends ConfigFormBase {
     $this->configFactory->getEditable('kontainer.settings')
       ->set('kontainer_url', $form_state->getValue('kontainer_url'))
       ->set('kontainer_media_source', $form_state->getValue('kontainer_media_source'))
+      ->set('integration_id', $form_state->getValue('integration_id'))
+      ->set('integration_secret', $form_state->getValue('integration_secret'))
       ->save();
-
     parent::submitForm($form, $form_state);
   }
 

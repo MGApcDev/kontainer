@@ -5,8 +5,14 @@
  * Drupal Module: Kontainer.
  */
 
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Plugin\Exception\PluginNotFoundException;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityMalformedException;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\kontainer\Plugin\media\Source\KontainerMediaSourceInterface;
 use Drupal\kontainer\Service\KontainerServiceInterface;
+use Drupal\node\NodeInterface;
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -15,8 +21,8 @@ function kontainer_form_field_ui_field_storage_add_form_alter(&$form, FormStateI
   // Toggles field availability of custom field types from this module in the
   // "Add a new field" select on the FieldStorageAddForm, based on the
   // configured media source.
-  $kontainerMediaSource = \Drupal::config('kontainer.settings')->get('kontainer_media_source');
-  switch ($kontainerMediaSource) {
+  $kontainer_media_source = \Drupal::config('kontainer.settings')->get('kontainer_media_source');
+  switch ($kontainer_media_source) {
     case KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE:
       unset($form['add']['new_storage_type']['#options']['Reference']['kontainer_cdn']);
       break;
@@ -36,5 +42,136 @@ function kontainer_field_formatter_info_alter(array &$info) {
     // Allows the "Rendered entity" formatter to be used on the
     // "Kontainer Media Reference" field type.
     $info['entity_reference_entity_view']['field_types'][] = 'kontainer_media_reference';
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function kontainer_form_media_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  /** @var \Drupal\acquia_dam\Plugin\media\Source\Asset $asset */
+  $asset = $form_state->getFormObject()->getEntity()->getSource();
+  if (!$asset instanceof KontainerMediaSourceInterface) {
+    return;
+  }
+  // Disable add form save button for DAM assets.
+  if (str_ends_with($form_id, '_add_form')) {
+    \Drupal::messenger()->addWarning('Kontainer assets cannot be added from this form, only through the Kontainer media storage field when creating content.');
+    $form['actions']['submit']['#disabled'] = TRUE;
+  }
+  if (isset($form['field_kontainer_file_id'])) {
+    $form['field_kontainer_file_id']['widget'][0]['value']['#attributes']['readonly'] = 'readonly';
+    $form['#validate'][] = '_kontainer_media_file_id_validate';
+  }
+}
+
+/**
+ * Form validation callback.
+ *
+ * Prevents the change of the kontainer file id value on media forms.
+ */
+function _kontainer_media_file_id_validate(&$form, FormStateInterface $form_state) {
+  $asset = $form_state->getFormObject()->getEntity();
+  $formStateValue = $form_state->getValue('field_kontainer_file_id')[0]['value'];
+  if ($asset && $formStateValue != $asset->get('field_kontainer_file_id')->getString()) {
+    $form_state->setErrorByName('field_kontainer_file_id', t('The Kontainer file id cannot be changed.'));
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function kontainer_form_media_type_confirm_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_state->getFormObject()->getEntity()->getSource() instanceof KontainerMediaSourceInterface) {
+    /* @see \Drupal\media\Form\MediaTypeDeleteConfirmForm */
+    unset($form['actions']);
+    unset($form['entity_updates']);
+    unset($form['entity_deletes']);
+    $form['description'] = [
+      '#type' => 'inline_template',
+      '#template' => '<p>{{ message }}</p>',
+      '#context' => [
+        'message' => t('Kontainer media types cannot be deleted.'),
+      ],
+    ];
+  }
+}
+
+// @todo Move the code below to an event subscriber, as soon as events are
+// @todo created instead of entity lifecycle hooks, see
+// @todo https://www.drupal.org/project/drupal/issues/2551893.
+// Currently this logic relies on hook_entity_insert() and hook_entity_update()
+// being executed after the same hooks in the entity_usage module, so we get
+// the correct entity_usage targets. Entity usage module does not have any
+// module weight altering, so this module will always be after it in the module
+// list (same module weight => ordered alphabetically). For media deletion
+// hook_ENTITY_TYPE_predelete() is used, because the entity_usage module uses
+// hook_entity_predelete(), which is executed after the hook in our module, this
+// is granted by Drupal core.
+
+/**
+ * Implements hook_entity_insert().
+ */
+function kontainer_entity_insert(EntityInterface $entity) {
+  if ($entity instanceof NodeInterface) {
+    /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+    $kontainer_service = \Drupal::service('kontainer_service');
+    try {
+      $mediaTargets = $kontainer_service->getNestedTargets($entity);
+      $cdnTargets = $kontainer_service->getNestedTargets($entity, TRUE);
+      $kontainer_service->trackMediaStorageUsage($mediaTargets, $entity);
+      $kontainer_service->trackCdnUsage($cdnTargets, $entity);
+    }
+    catch (PluginNotFoundException | EntityMalformedException | InvalidPluginDefinitionException $e) {
+      $kontainer_service->logException($e);
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function kontainer_entity_update(EntityInterface $entity) {
+  if ($entity instanceof NodeInterface) {
+    /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+    $kontainer_service = \Drupal::service('kontainer_service');
+    try {
+      $mediaTargets = $kontainer_service->getNestedTargets($entity);
+      $cdnTargets = $kontainer_service->getNestedTargets($entity, TRUE);
+      $kontainer_service->trackMediaStorageUsage($mediaTargets, $entity);
+      $kontainer_service->trackCdnUsage($cdnTargets, $entity);
+    }
+    catch (PluginNotFoundException | EntityMalformedException | InvalidPluginDefinitionException $e) {
+      $kontainer_service->logException($e);
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function kontainer_entity_delete(EntityInterface $entity) {
+  /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+  $kontainer_service = \Drupal::service('kontainer_service');
+  if ($entity instanceof NodeInterface) {
+    $kontainer_service->deleteSourceUsage($entity->id(), KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE);
+    $kontainer_service->deleteSourceUsage($entity->id(), KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_CDN_URL);
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_predelete().
+ */
+function kontainer_media_predelete(EntityInterface $entity) {
+  /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+  $kontainer_service = \Drupal::service('kontainer_service');
+  try {
+    /** @var \Drupal\entity_usage\EntityUsageInterface $entity_usage */
+    $entity_usage = \Drupal::service('entity_usage.usage');
+    $mediaTargets = $kontainer_service->getMasterSourceIds($entity_usage->listSources($entity));
+    $kontainer_service->deleteTargetUsage($mediaTargets, $entity->id());
+  }
+  catch (PluginNotFoundException | InvalidPluginDefinitionException $e) {
+    $kontainer_service->logException($e);
   }
 }

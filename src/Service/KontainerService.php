@@ -3,15 +3,22 @@
 namespace Drupal\kontainer\Service;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\State\StateInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Utility\Error;
+use Drupal\entity_usage\EntityUsageInterface;
+use Drupal\kontainer\Plugin\media\Source\KontainerMediaSourceInterface;
 use Drupal\media\MediaTypeInterface;
+use Drupal\node\NodeInterface;
+use Drupal\paragraphs\ParagraphInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -71,6 +78,27 @@ class KontainerService implements KontainerServiceInterface {
   protected LoggerInterface $logger;
 
   /**
+   * Service "entity_usage.usage".
+   *
+   * @var \Drupal\entity_usage\EntityUsageInterface
+   */
+  protected EntityUsageInterface $entityUsage;
+
+  /**
+   * Service "state".
+   *
+   * @var \Drupal\Core\State\StateInterface
+   */
+  protected StateInterface $state;
+
+  /**
+   * Service "entity_field.manager".
+   *
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   */
+  protected EntityFieldManagerInterface $entityFieldManager;
+
+  /**
    * Upload directory for files from Kontainer.
    *
    * @var string
@@ -94,6 +122,12 @@ class KontainerService implements KontainerServiceInterface {
    *   Service "string_translation".
    * @param \Psr\Log\LoggerInterface $logger
    *   Kontainer channel logger instance.
+   * @param \Drupal\entity_usage\EntityUsageInterface $entityUsage
+   *   Service "entity_usage.usage".
+   * @param \Drupal\Core\State\StateInterface $state
+   *   Service "state".
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
+   *   Service "entity_field.manager".
    */
   public function __construct(
     ModuleHandlerInterface $moduleHandler,
@@ -102,7 +136,10 @@ class KontainerService implements KontainerServiceInterface {
     EntityTypeManagerInterface $entityTypeManager,
     AccountProxyInterface $currentUser,
     TranslationInterface $stringTranslation,
-    LoggerInterface $logger
+    LoggerInterface $logger,
+    EntityUsageInterface $entityUsage,
+    StateInterface $state,
+    EntityFieldManagerInterface $entityFieldManager
   ) {
     $this->moduleHandler = $moduleHandler;
     $this->configFactory = $configFactory;
@@ -111,6 +148,9 @@ class KontainerService implements KontainerServiceInterface {
     $this->currentUser = $currentUser;
     $this->stringTranslation = $stringTranslation;
     $this->logger = $logger;
+    $this->entityUsage = $entityUsage;
+    $this->state = $state;
+    $this->entityFieldManager = $entityFieldManager;
   }
 
   /**
@@ -122,18 +162,22 @@ class KontainerService implements KontainerServiceInterface {
     $assetExtension = $assetData['extension'] ?? NULL;
     $assetName = $assetData['fileName'] ?? NULL;
     $assetAlt = $assetData['alt'] ?? NULL;
+    $assetKontainerFileId = $assetData['fileId'] ?? NULL;
     if (empty($assetUrl)) {
       throw new \Exception('No file url provided from Kontainer.');
     }
     if (empty(self::MEDIA_TYPES_MAPPING[$assetData['type']])) {
       throw new \Exception('Unsupported asset type.');
     }
+    if (empty($assetKontainerFileId)) {
+      throw new \Exception('No Kontainer file id provided from Kontainer.');
+    }
     $this->checkAccess(self::MEDIA_TYPES_MAPPING[$assetData['type']]);
     $mediaType = $this->getMediaType($assetType);
     $sourceFieldName = $this->getMediaTypeSourceField($mediaType);
     $this->validateMediaTypeExtensions($assetType, $sourceFieldName, $assetExtension);
     $fileId = $this->createFile($assetUrl);
-    return $this->createMedia($this->generateMediaValues($fileId, $assetType, $assetName, $sourceFieldName, $assetAlt));
+    return $this->createMedia($this->generateMediaValues($fileId, $assetKontainerFileId, $assetType, $assetName, $sourceFieldName, $assetAlt));
   }
 
   /**
@@ -219,22 +263,256 @@ class KontainerService implements KontainerServiceInterface {
   /**
    * {@inheritDoc}
    */
-  public function getFieldFormatterSettings(string $entityFormDisplayId, string $fieldName, string $settingName = NULL) {
-    $formatterSettings = $this->entityTypeManager
-      ->getStorage('entity_view_display')
-      ->load($entityFormDisplayId)
-      ->getRenderer($fieldName)
-      ->getSettings();
-    return $settingName ? ($formatterSettings[$settingName] ?? '') : ($formatterSettings ?? []);
+  public function logException(\Exception $e): void {
+    $message = '%type: @message in %function (line %line of %file). Backtrace: @backtrace_string';
+    $variables = Error::decodeException($e);
+    $this->logger->error($message, $variables);
   }
 
   /**
    * {@inheritDoc}
    */
-  public function logException(\Exception $e): void {
-    $message = '%type: @message in %function (line %line of %file). Backtrace: @backtrace_string';
-    $variables = Error::decodeException($e);
-    $this->logger->error($message, $variables);
+  public function getNestedTargets(ContentEntityInterface $entity, bool $cdn = FALSE): array {
+    $entityTargets = $this->entityUsage->listTargets($entity, $entity->getRevisionId());
+    $mediaTargets = [];
+    if (!empty($entityTargets['paragraph'])) {
+      foreach ($entityTargets['paragraph'] as $paragraphId => $paragraphUsageData) {
+        /** @var \Drupal\paragraphs\ParagraphInterface $paragraph */
+        $paragraph = $this->entityTypeManager
+          ->getStorage('paragraph')
+          ->load($paragraphId);
+        if (!empty($paragraph)) {
+          $mediaTargets += $this->getNestedTargets($paragraph, $cdn);
+        }
+      }
+    }
+    if ($cdn) {
+      $this->getCdnTargets($entity, $mediaTargets);
+    }
+    else {
+      if (!empty($entityTargets['media'])) {
+        $mediaTargets += $entityTargets['media'];
+      }
+    }
+    return $mediaTargets;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function getMasterSourceIds(array $directSources): array {
+    $masterSourceIds = [];
+    foreach ($directSources as $sourceType => $sourceIds) {
+      if ($sourceType === 'node') {
+        $masterSourceIds += array_keys($sourceIds);
+      }
+      if ($sourceType === 'paragraph') {
+        $typeStorage = $this->entityTypeManager->getStorage($sourceType);
+        foreach ($sourceIds as $sourceId => $sourceIdRevisions) {
+          /** @var \Drupal\paragraphs\ParagraphInterface $sourceEntity */
+          $sourceEntity = $typeStorage->load($sourceId);
+          if ($sourceEntity) {
+            $host = $this->getParagraphHost($sourceEntity);
+            if ($host) {
+              $masterSourceIds[] = $host->id();
+            }
+          }
+
+        }
+      }
+    }
+    return array_unique($masterSourceIds, SORT_NUMERIC);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function trackMediaStorageUsage(array $mediaTargets, NodeInterface $node): void {
+    $this->deleteSourceUsage($node->id(), self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE);
+    $kontainerUsage = $this->state->get('kontainer_usage') ?? [];
+    if ($mediaIds = array_keys($mediaTargets)) {
+      $nodeId = $node->id();
+      /** @var \Drupal\media\MediaInterface $media */
+      foreach ($this->entityTypeManager->getStorage('media')->loadMultiple($mediaIds) as $media) {
+        if (!isset($media)) {
+          continue;
+        }
+        $sourcePlugin = $media->getSource();
+        if (!$sourcePlugin instanceof KontainerMediaSourceInterface) {
+          continue;
+        }
+        $kontainerFileId = $media->get('field_kontainer_file_id')->getString();
+        if (!$kontainerFileId) {
+          continue;
+        }
+        $mediaId = $media->id();
+        $kontainerUsage[$kontainerFileId][$nodeId][self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE][$mediaId] = [
+          'nodeId' => $nodeId,
+          'nodeUrl' => $node->toUrl('canonical', ['absolute' => TRUE])
+            ->toString(),
+          'nodeTitle' => $node->getTitle(),
+          'mediaId' => $mediaId,
+          'mediaUrl' => $media->toUrl('canonical', ['absolute' => TRUE])
+            ->toString(),
+          'kontainerFileId' => $kontainerFileId,
+          'mediaSourceType' => self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE,
+        ];
+      }
+    }
+    $this->state->set('kontainer_usage', $kontainerUsage);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function trackCdnUsage(array $cdnTargets, NodeInterface $node): void {
+    $this->deleteSourceUsage($node->id(), self::KONTAINER_MEDIA_SOURCE_CDN_URL);
+    if (!empty($cdnTargets)) {
+      $kontainerUsage = $this->state->get('kontainer_usage') ?? [];
+      $nodeId = $node->id();
+      foreach ($cdnTargets as $kontainerFileId) {
+        $kontainerUsage[$kontainerFileId][$nodeId][self::KONTAINER_MEDIA_SOURCE_CDN_URL][] = [
+          'nodeId' => $nodeId,
+          'nodeUrl' => $node->toUrl('canonical', ['absolute' => TRUE])
+            ->toString(),
+          'nodeTitle' => $node->getTitle(),
+          'kontainerFileId' => $kontainerFileId,
+          'mediaSourceType' => self::KONTAINER_MEDIA_SOURCE_CDN_URL,
+        ];
+      }
+      $this->state->set('kontainer_usage', $kontainerUsage);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function deleteSourceUsage(int $deletedSourceId, string $mediaSource): void {
+    $kontainerUsage = $this->state->get('kontainer_usage');
+    if (!empty($kontainerUsage)) {
+      foreach ($kontainerUsage as $kontainerFileId => &$kontainerUsageData) {
+        foreach ($kontainerUsageData as $sourceId => $targetsByMediaSource) {
+          if ($deletedSourceId == $sourceId) {
+            unset($kontainerUsageData[$sourceId][$mediaSource]);
+          }
+          if (empty($kontainerUsageData[$sourceId])) {
+            unset($kontainerUsageData[$sourceId]);
+          }
+        }
+        if (empty($kontainerUsageData)) {
+          unset($kontainerUsage[$kontainerFileId]);
+        }
+      }
+      $this->state->set('kontainer_usage', $kontainerUsage);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function deleteTargetUsage(array $sourceIds, int $targetId): void {
+    if (!empty($sourceIds)) {
+      $kontainerUsage = $this->state->get('kontainer_usage');
+      if (!empty($kontainerUsage)) {
+        foreach ($kontainerUsage as $kontainerFileId => &$kontainerUsageData) {
+          foreach ($kontainerUsageData as $sourceId => &$targetsByMediaSource) {
+            if (in_array($sourceId, $sourceIds) && isset($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE][$targetId])) {
+              unset($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE][$targetId]);
+            }
+            if (empty($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE])) {
+              unset($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE]);
+            }
+            if (empty($targetsByMediaSource)) {
+              unset($kontainerUsageData[$sourceId]);
+            }
+          }
+          if (empty($kontainerUsageData)) {
+            unset($kontainerUsage[$kontainerFileId]);
+          }
+        }
+        $this->state->set('kontainer_usage', $kontainerUsage);
+      }
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function formatUsageData(array $kontainerUsage): array {
+    $kontainerUsageFormatted = ['kontainerFiles' => []];
+    foreach ($kontainerUsage as $kontainerFileId => $kontainerUsageData) {
+      $usages = [];
+      foreach ($kontainerUsageData as $targetsByMediaSource) {
+        foreach ($targetsByMediaSource as $targetsData) {
+          foreach ($targetsData as $targetData) {
+            // NOTE: By CDN media source type, there will always be only one
+            // entry per Kontainer file id per node (if there are multiple CDN
+            // URL instances of the same Kontainer file on a node, usage data is
+            // the same for all, hence only one is stored).
+            $usages[] = $targetData;
+          }
+        }
+      }
+      $kontainerUsageFormatted['kontainerFiles'][] = [
+        'kontainerFileId' => $kontainerFileId,
+        'usages' => $usages,
+      ];
+    }
+    return $kontainerUsageFormatted;
+  }
+
+  /**
+   * Returns the top host of the paragraph.
+   *
+   * If NULL is returned, the paragraph is orphaned (at some level).
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface|null $entity
+   *   The entity to check for its host/host entity in the last step of
+   *   recursion.
+   *
+   * @return \Drupal\Core\Entity\ContentEntityInterface|null
+   *   The host node entity, NULL if orphaned (at any level), or not a node.
+   */
+  private function getParagraphHost(?ContentEntityInterface $entity): ?ContentEntityInterface {
+    if ($entity instanceof ParagraphInterface) {
+      return $this->getParagraphHost($entity->getParentEntity());
+    }
+    // This should be a node. If it's not a node, we could just call the
+    // listSources function from EntityUsage service on it and start the
+    // process of seeking source entities also for this entity. But if the site
+    // has nested paragraphs in media, or some other entity types, that is just
+    // a case of bad site building, and it should be avoided. If there is a
+    // custom entity, which references Kontainer media, that's out of scope,
+    // currently only direct media references, media references in nested
+    // paragraphs and what entity_usage provides for media is supported.
+    return $entity instanceof NodeInterface ? $entity : NULL;
+  }
+
+  /**
+   * Returns Kontainer CDN URL targets used on an entity.
+   *
+   * Checks if the entity has a field of type Kontainer CDN and adds the values
+   * from the field(s) to the targets array.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The (current) source entity.
+   * @param array $mediaTargets
+   *   Array with Kontainer targets.
+   */
+  private function getCdnTargets(ContentEntityInterface $entity, array &$mediaTargets) {
+    $cdnFields = $this->entityFieldManager->getFieldMapByFieldType('kontainer_cdn');
+    $entityFields = $entity->getFieldDefinitions();
+    if (isset($cdnFields[$entity->getEntityTypeId()])) {
+      foreach ($cdnFields[$entity->getEntityTypeId()] as $fieldMachineName => $field) {
+        if (isset($entityFields[$fieldMachineName]) && !$entity->get($fieldMachineName)->isEmpty()) {
+          foreach ($entity->get($fieldMachineName)->getValue() as $fieldEntries) {
+            if (isset($fieldEntries['kontainer_file_id'])) {
+              $mediaTargets[$fieldEntries['kontainer_file_id']] = $fieldEntries['kontainer_file_id'];
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -351,6 +629,8 @@ class KontainerService implements KontainerServiceInterface {
    *
    * @param int $fileId
    *   File entity id.
+   * @param int $kontainerFileId
+   *   Kontainer file id.
    * @param string $assetType
    *   Kontainer asset type.
    * @param null|string $assetName
@@ -363,7 +643,7 @@ class KontainerService implements KontainerServiceInterface {
    * @return array
    *   Array with media type field values.
    */
-  private function generateMediaValues(int $fileId, string $assetType, ?string $assetName, string $sourceFieldName, ?string $imageAltAttribute): array {
+  private function generateMediaValues(int $fileId, int $kontainerFileId, string $assetType, ?string $assetName, string $sourceFieldName, ?string $imageAltAttribute): array {
     $sourceFieldValues = [
       'target_id' => $fileId,
     ];
@@ -378,6 +658,7 @@ class KontainerService implements KontainerServiceInterface {
       'uid' => $this->currentUser->id(),
       'status' => TRUE,
       $sourceFieldName => $sourceFieldValues,
+      'field_kontainer_file_id' => $kontainerFileId,
     ];
   }
 

@@ -45,11 +45,17 @@ class KontainerController extends ControllerBase implements ContainerInjectionIn
 
   /**
    * Creates a file and a media entity from the JSON object.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The incoming HTTP request object.
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   Response with media data.
    */
   public function createMedia(Request $request): JsonResponse {
     try {
-      $assetsData = $this->decodeAssetValues($request);
-      $mediaValues = $this->kontainerService->createEntities($assetsData);
+      $assetData = $this->decodeAssetValues($request);
+      $mediaValues = $this->kontainerService->createEntities($assetData);
     }
     catch (\Exception $e) {
       $this->kontainerService->logException($e);
@@ -60,8 +66,28 @@ class KontainerController extends ControllerBase implements ContainerInjectionIn
     return new JsonResponse([
       'media_id' => $mediaValues['id'] ?? NULL,
       'media_label' => $mediaValues['label'] ?? NULL,
-      'kontainer_file_id' => $assetsData['fileId'] ?? NULL,
+      'kontainer_file_id' => $assetData['fileId'] ?? NULL,
     ]);
+  }
+
+  /**
+   * Returns the Kontainer media usage data (formatted).
+   *
+   * If the "kontainerFileId" query parameter is present, only the data for that
+   * file id will be returned.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The incoming HTTP request object.
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   Response with formatted usage data.
+   */
+  public function sendUsage(Request $request): JsonResponse {
+    $usageData = $this->state()->get('kontainer_usage') ?? [];
+    if ($kontainerFileId = $request->get('kontainerFileId')) {
+      $usageData = $usageData[$kontainerFileId] ?? [];
+    }
+    return new JsonResponse($this->kontainerService->formatUsageData($usageData));
   }
 
   /**
@@ -74,14 +100,14 @@ class KontainerController extends ControllerBase implements ContainerInjectionIn
    *   Array with the asset data or NULL.
    */
   private function decodeAssetValues(Request $request): array {
-    $assetsData = Json::decode($request->getContent());
-    if (empty($assetsData)) {
+    $assetData = Json::decode($request->getContent());
+    if (empty($assetData)) {
       return [];
     }
     // In this phase importing of multiple items at once is not yet
     // supported. If the array consists of multiple items, only the first one
     // will be imported.
-    return $assetsData[0] ?? $assetsData;
+    return $assetData[0] ?? $assetData;
   }
 
 }
