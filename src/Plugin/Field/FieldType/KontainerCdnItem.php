@@ -65,9 +65,9 @@ class KontainerCdnItem extends LinkItem {
       'media_type' => DataDefinition::create('string')
         ->setLabel(new TranslatableMarkup('Media type'))
         ->setDescription(new TranslatableMarkup('Kontainer media type.')),
-      'alt' => DataDefinition::create('string')
-        ->setLabel(new TranslatableMarkup('Alternative text'))
-        ->setDescription(new TranslatableMarkup("Alternative image text, for the image's 'alt' attribute.")),
+      'kontainer_file_name' => DataDefinition::create('string')
+        ->setLabel(new TranslatableMarkup('Kontainer file name'))
+        ->setDescription(new TranslatableMarkup('The name of the Kontainer file.')),
       'kontainer_file_id' => DataDefinition::create('integer')
         ->setLabel(new TranslatableMarkup('Width'))
         ->setDescription(new TranslatableMarkup('The ID of the Kontainer file.')),
@@ -89,8 +89,8 @@ class KontainerCdnItem extends LinkItem {
         'type' => 'varchar',
         'length' => 512,
       ],
-      'alt' => [
-        'description' => 'Alternative image text, for the image\'s \'alt\' attribute.',
+      'kontainer_file_name' => [
+        'description' => 'The name of the Kontainer file.',
         'type' => 'varchar',
         'length' => 512,
       ],

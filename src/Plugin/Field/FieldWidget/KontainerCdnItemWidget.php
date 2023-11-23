@@ -123,13 +123,13 @@ class KontainerCdnItemWidget extends LinkWidget {
       '#weight' => 20,
       '#default_value' => $items[$delta]->getValue()['media_type'] ?? NULL,
     ];
-    $element['alt'] = [
+    $element['kontainer_file_name'] = [
       '#type' => 'hidden',
       '#attributes' => [
-        'data-kontainer-selector' => 'kontainer-alt-' . $fieldMachineName . '-' . $delta,
+        'data-kontainer-selector' => 'kontainer-file_name-' . $fieldMachineName . '-' . $delta,
       ],
       '#weight' => 30,
-      '#default_value' => $items[$delta]->getValue()['alt'] ?? NULL,
+      '#default_value' => $items[$delta]->getValue()['kontainer_file_name'] ?? NULL,
     ];
     $element['kontainer_file_id'] = [
       '#type' => 'hidden',
@@ -173,7 +173,7 @@ class KontainerCdnItemWidget extends LinkWidget {
     $ajaxResponse = new AjaxResponse();
     $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-cdn-$fieldMachineName-$delta\"]", 'val', ['']));
     $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-media-type-$fieldMachineName-$delta\"]", 'val', ['']));
-    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-alt-$fieldMachineName-$delta\"]", 'val', ['']));
+    $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-file_name-$fieldMachineName-$delta\"]", 'val', ['']));
     $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-file-id-$fieldMachineName-$delta\"]", 'val', ['']));
     $ajaxResponse->addCommand(new InvokeCommand("[data-kontainer-selector=\"kontainer-base-uri-$fieldMachineName-$delta\"]", 'val', ['']));
     return $ajaxResponse;
