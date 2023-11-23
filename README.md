@@ -95,7 +95,7 @@ option.
        Entity Reference" tracking plugin (if not yet enabled) and configure
        other Entity Usage module settings as you like. Save the configuration.
 
-    5. Export the configuration (drush cex).
+    6. Export the configuration (drush cex).
 
 ## Maintainers
 
