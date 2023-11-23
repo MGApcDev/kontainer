@@ -117,14 +117,12 @@ class KontainerConfigForm extends ConfigFormBase {
       '#title' => $this->t('Integration ID'),
       '#default_value' => $config->get('integration_id'),
       '#description' => $this->t('Enter your integration ID for the usage API.'),
-      '#required' => TRUE,
     ];
     $form['integration_secret'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Integration secret'),
       '#default_value' => $config->get('integration_secret'),
       '#description' => $this->t('Enter your integration secret for the usage API.'),
-      '#required' => TRUE,
     ];
     return parent::buildForm($form, $form_state);
   }
