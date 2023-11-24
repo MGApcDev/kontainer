@@ -9,7 +9,7 @@ use Symfony\Component\Validator\Constraint;
  *
  * @Constraint(
  *   id = "KontainerLink",
- *   label = @Translation("Link must be from Kontainer URL in config.", context = "Validation"),
+ *   label = @Translation("The Link must be from Kontainer URL set in config.", context = "Validation"),
  * )
  */
 class KontainerLinkConstraint extends Constraint {

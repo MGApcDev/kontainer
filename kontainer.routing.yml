@@ -28,7 +28,7 @@ entity.cdn_image_conversion.collection:
   path: '/admin/structure/cdn-image-conversion'
   defaults:
     _entity_list: 'cdn_image_conversion'
-    _title: 'Cdn Image Conversion configuration'
+    _title: 'CDN Image Conversion configuration'
   requirements:
     _permission: 'administer cdn_image_conversion'
 
@@ -36,7 +36,7 @@ entity.cdn_image_conversion.add_form:
   path: '/admin/structure/cdn_image_conversion/add'
   defaults:
     _entity_form: 'cdn_image_conversion.add'
-    _title: 'Add a cdn image conversion'
+    _title: 'Add a CDN image conversion'
   requirements:
     _permission: 'administer cdn_image_conversion'
 
@@ -44,7 +44,7 @@ entity.cdn_image_conversion.edit_form:
   path: '/admin/structure/cdn-image-conversion/{cdn_image_conversion}'
   defaults:
     _entity_form: 'cdn_image_conversion.edit'
-    _title: 'Edit a cdn image conversion'
+    _title: 'Edit a CDN image conversion'
   requirements:
     _permission: 'administer cdn_image_conversion'
 
@@ -52,6 +52,6 @@ entity.cdn_image_conversion.delete_form:
   path: '/admin/structure/cdn-image-conversion/{cdn_image_conversion}/delete'
   defaults:
     _entity_form: 'cdn_image_conversion.delete'
-    _title: 'Delete a cdn image conversion'
+    _title: 'Delete a CDN image conversion'
   requirements:
     _permission: 'administer cdn_image_conversion'

@@ -6,7 +6,7 @@ use Drupal\media\MediaTypeInterface;
 use Drupal\media\Plugin\media\Source\File;
 
 /**
- * Media source for DAM assets.
+ * Media source for DAM file assets.
  *
  * @MediaSource(
  *   id = "kontainer",
@@ -16,7 +16,6 @@ use Drupal\media\Plugin\media\Source\File;
  *   default_thumbnail_filename = "generic.png",
  *   deriver = "Drupal\kontainer\Plugin\media\Source\KontainerFileAssetDeriver",
  * )
- * @todo Add kontainer_file_id to file/media directly -> usage API.
  */
 class KontainerFileAsset extends File implements KontainerMediaSourceInterface {
 

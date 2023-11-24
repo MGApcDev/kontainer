@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Plugin implementation of the 'remote_image' formatter.
+ * Plugin implementation of the 'kontainer_cdn' formatter.
  *
  * @FieldFormatter(
  *   id = "kontainer_cdn",
@@ -153,7 +153,6 @@ class KontainerCdnFormatter extends FormatterBase {
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = [];
-    // Add one image per item.
     foreach ($items as $delta => $item) {
       switch ($item->media_type) {
         case KontainerServiceInterface::KONTAINER_IMAGE_TYPE:

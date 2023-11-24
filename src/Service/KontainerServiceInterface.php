@@ -18,21 +18,21 @@ interface KontainerServiceInterface {
   const KONTAINER_IMAGE_TYPE = 'image';
 
   /**
-   * Machine name of the Kontainer image media type.
+   * Machine name of the Kontainer video media type.
    *
    * @var string
    */
   const KONTAINER_VIDEO_TYPE = 'video';
 
   /**
-   * Machine name of the Kontainer image media type.
+   * Machine name of the Kontainer document media type.
    *
    * @var string
    */
   const KONTAINER_DOCUMENT_TYPE = 'document';
 
   /**
-   * Machine name of the Kontainer image media type.
+   * Machine name of the Kontainer file media type.
    *
    * @var string
    */
@@ -70,8 +70,8 @@ interface KontainerServiceInterface {
    * @param array $assetData
    *   Kontainer asset data.
    *
-   * @return bool|int
-   *   The id of the created/existing media entity.
+   * @return array
+   *   The id and the label of the media as array values.
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
    *   Thrown if the entity can't be saved.
@@ -124,7 +124,7 @@ interface KontainerServiceInterface {
   public function getCdnImageConversionsRenderLink(): array;
 
   /**
-   * Gets an array of image styles suitable for using as select list options.
+   * Gets an array of CDN image conversions as select list options.
    *
    * @param bool $includeEmpty
    *   If TRUE a '- None -' option will be inserted in the options array.
@@ -202,7 +202,7 @@ interface KontainerServiceInterface {
    * entity is being created or updated. Saves data to Drupal state.
    *
    * @param array $cdnTargets
-   *   Array with cdn targets on the parent node (Kontainer file id).
+   *   Array with CDN targets on the parent node.
    * @param \Drupal\node\NodeInterface $node
    *   The node entity.
    *

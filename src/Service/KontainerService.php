@@ -185,7 +185,7 @@ class KontainerService implements KontainerServiceInterface {
    */
   public function generateCdnFormattedUrl(string $urlBaseName, string $imageConversion): ?string {
     if (!$urlBaseName || !$imageConversion) {
-      throw new \Exception('Cdn and/or image conversion id could not be fetched.');
+      throw new \Exception('CDN and/or image conversion id could not be fetched.');
     }
     $imageConversionLoaded = $this->entityTypeManager
       ->getStorage('cdn_image_conversion')
@@ -248,14 +248,14 @@ class KontainerService implements KontainerServiceInterface {
       ->loadMultiple();
     $options = [];
     if ($includeEmpty && !empty($conversions)) {
-      $options[''] = t('- None -');
+      $options[''] = $this->stringTranslation->translate('- None -');
     }
     foreach ($conversions as $name => $conversion) {
       $options[$name] = $conversion->label();
     }
 
     if (empty($options)) {
-      $options[''] = t('No defined conversions');
+      $options[''] = $this->stringTranslation->translate('No defined conversions');
     }
     return $options;
   }
@@ -467,7 +467,7 @@ class KontainerService implements KontainerServiceInterface {
    * If NULL is returned, the paragraph is orphaned (at some level).
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface|null $entity
-   *   The entity to check for its host/host entity in the last step of
+   *   The entity to check for its host entity in the last step of
    *   recursion.
    *
    * @return \Drupal\Core\Entity\ContentEntityInterface|null
@@ -482,8 +482,8 @@ class KontainerService implements KontainerServiceInterface {
     // process of seeking source entities also for this entity. But if the site
     // has nested paragraphs in media, or some other entity types, that is just
     // a case of bad site building, and it should be avoided. If there is a
-    // custom entity, which references Kontainer media, that's out of scope,
-    // currently only direct media references, media references in nested
+    // (custom) non-node entity, which references Kontainer media, that's out of
+    // scope, currently only direct media references, media references in nested
     // paragraphs and what entity_usage provides for media is supported.
     return $entity instanceof NodeInterface ? $entity : NULL;
   }

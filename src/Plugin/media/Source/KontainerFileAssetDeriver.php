@@ -46,13 +46,13 @@ class KontainerFileAssetDeriver extends DeriverBase implements ContainerDeriverI
       'document' => [
         'id' => 'document',
         'label' => $this->stringTranslation->translate('Document (Kontainer)'),
-        'description' => $this->stringTranslation->translate("Document assets from Kontainer DAM"),
+        'description' => $this->stringTranslation->translate('Document assets from Kontainer DAM'),
         'default_thumbnail_filename' => 'generic.png',
       ] + $base_plugin_definition,
       'file' => [
         'id' => 'file',
         'label' => $this->stringTranslation->translate('File (Kontainer)'),
-        'description' => $this->stringTranslation->translate("File assets from Kontainer DAM"),
+        'description' => $this->stringTranslation->translate('File assets from Kontainer DAM'),
         'default_thumbnail_filename' => 'generic.png',
       ] + $base_plugin_definition,
     ];

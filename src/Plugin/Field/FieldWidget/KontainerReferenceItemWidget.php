@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 /**
- * Plugin implementation of the 'kontainer_widget' widget.
+ * Plugin implementation of the 'kontainer_media_reference' widget.
  *
  * @FieldWidget(
  *   id = "kontainer_media_reference",

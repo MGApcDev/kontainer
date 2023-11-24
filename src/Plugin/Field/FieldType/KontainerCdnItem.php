@@ -10,7 +10,7 @@ use Drupal\link\LinkItemInterface;
 use Drupal\link\Plugin\Field\FieldType\LinkItem;
 
 /**
- * Defines the 'Kontainer' entity field type.
+ * Defines the 'Kontainer CDN' field type.
  *
  * @FieldType(
  *   id = "kontainer_cdn",
@@ -47,12 +47,12 @@ class KontainerCdnItem extends LinkItem {
     $element['link_type']['#options'] = [
       self::LINK_EXTERNAL => $element['link_type']['#options'][self::LINK_EXTERNAL],
     ];
-    // Just in case, that this gets changed in the future in LinkItemInterface.
+    // Just in case, if this gets changed in the future in LinkItemInterface.
     $element['link_type']['#default_value'] = self::LINK_EXTERNAL;
     $element['title']['#options'] = [
       DRUPAL_DISABLED => $element['title']['#options'][DRUPAL_DISABLED],
     ];
-    // Just in case, that this gets changed in the future in system.module.
+    // Just in case, if this gets changed in the future in system.module.
     $element['title']['#default_value'] = DRUPAL_DISABLED;
     return $element;
   }
@@ -64,7 +64,7 @@ class KontainerCdnItem extends LinkItem {
     return [
       'media_type' => DataDefinition::create('string')
         ->setLabel(new TranslatableMarkup('Media type'))
-        ->setDescription(new TranslatableMarkup('Kontainer media type.')),
+        ->setDescription(new TranslatableMarkup('The Kontainer media type.')),
       'kontainer_file_name' => DataDefinition::create('string')
         ->setLabel(new TranslatableMarkup('Kontainer file name'))
         ->setDescription(new TranslatableMarkup('The name of the Kontainer file.')),
@@ -73,7 +73,7 @@ class KontainerCdnItem extends LinkItem {
         ->setDescription(new TranslatableMarkup('The ID of the Kontainer file.')),
       'base_uri' => DataDefinition::create('uri')
         ->setLabel(new TranslatableMarkup('Base URI'))
-        ->setDescription(new TranslatableMarkup('Base URI of the media.')),
+        ->setDescription(new TranslatableMarkup('The base URI of the media.')),
     ] + parent::propertyDefinitions($field_definition);
   }
 
@@ -82,7 +82,6 @@ class KontainerCdnItem extends LinkItem {
    */
   public static function schema(FieldStorageDefinitionInterface $field_definition) {
     $schema = parent::schema($field_definition);
-
     $schema['columns'] = [
       'media_type' => [
         'description' => 'The Kontainer media type.',
@@ -100,7 +99,7 @@ class KontainerCdnItem extends LinkItem {
         'unsigned' => TRUE,
       ],
       'base_uri'   => [
-        'description' => 'Base URI of the media.',
+        'description' => 'The base URI of the media.',
         'type' => 'varchar',
         'length' => 2048,
       ],

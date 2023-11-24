@@ -7,5 +7,5 @@ kontainer.admin.config:
 entity.cdn_image_conversion.overview:
   title: Cdn Image Conversions
   parent: system.admin_structure
-  description: 'List of cdn image conversions to extend site functionality.'
+  description: 'List of CDN image conversions to extend site functionality.'
   route_name: entity.cdn_image_conversion.collection

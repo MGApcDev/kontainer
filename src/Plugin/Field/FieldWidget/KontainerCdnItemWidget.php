@@ -13,7 +13,7 @@ use Drupal\link\Plugin\Field\FieldWidget\LinkWidget;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Plugin implementation of the 'kontainer_widget' widget.
+ * Plugin implementation of the 'kontainer_cdn' widget.
  *
  * @FieldWidget(
  *   id = "kontainer_cdn",

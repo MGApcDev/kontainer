@@ -1,5 +1,5 @@
 entity.cdn_image_conversion.add_form:
   route_name: 'entity.cdn_image_conversion.add_form'
-  title: 'Add cdn image conversion'
+  title: 'Add CDN image conversion'
   appears_on:
     - entity.cdn_image_conversion.collection

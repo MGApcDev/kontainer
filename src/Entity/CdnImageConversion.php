@@ -11,7 +11,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\kontainer\CdnImageConversionInterface;
 
 /**
- * Defines the cdn image conversion entity type.
+ * Defines the CDN image conversion entity type.
  *
  * @ConfigEntityType(
  *   id = "cdn_image_conversion",
@@ -126,13 +126,14 @@ class CdnImageConversion extends ConfigEntityBase implements CdnImageConversionI
    *   Thrown if the storage handler couldn't be loaded.
    *
    * @note The last two exceptions can be thrown in loadMultiple(), but are not
-   * described in the functions doc comment.
+   * described in the function's doc comment.
    */
   protected static function replaceConversionStyle(CdnImageConversionInterface $conversion) {
     foreach (EntityViewDisplay::loadMultiple() as $display) {
       foreach ($display->getComponents() as $name => $options) {
         if (
-          isset($options['type']) && $options['type'] == 'kontainer_cdn' &&
+          isset($options['type']) &&
+          $options['type'] == 'kontainer_cdn' &&
           $options['settings']['image_conversion'] == $conversion->id()
         ) {
           $options['settings']['image_conversion'] = '';

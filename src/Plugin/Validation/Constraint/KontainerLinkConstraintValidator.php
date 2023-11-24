@@ -72,7 +72,7 @@ class KontainerLinkConstraintValidator extends ConstraintValidator implements Co
           throw new ConfigValueException('Kontainer URL configuration could not be fetched.');
         }
       }
-      // If the URL is malformed this constraint cannot check further.
+      // If the URL is malformed, the constraint cannot check further.
       catch (\InvalidArgumentException | ConfigValueException $e) {
         $this->kontainerService->logException($e);
         return;

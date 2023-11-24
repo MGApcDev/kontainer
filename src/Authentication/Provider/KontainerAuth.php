@@ -50,8 +50,7 @@ class KontainerAuth implements AuthenticationProviderInterface {
     $kontainerUsagePath = $this->routeProvider
       ->getRouteByName('kontainer.usage')
       ->getPath();
-    $pathInfo = $request->getPathInfo();
-    return $kontainerUsagePath === $pathInfo && $request->headers->get('Authorization');
+    return $kontainerUsagePath === $request->getPathInfo() && $request->headers->get('Authorization');
   }
 
   /**

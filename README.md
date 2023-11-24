@@ -100,7 +100,7 @@ option.
 ## Maintainers
 
 Supporting organizations:
-* Kontainer A/S - https://kontainer.com
+* Kontainer - https://kontainer.com
 * Agiledrop - https://www.drupal.org/agiledrop
 
 Current maintainers:

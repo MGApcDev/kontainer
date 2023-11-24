@@ -97,7 +97,7 @@ class KontainerController extends ControllerBase implements ContainerInjectionIn
    *   The incoming request.
    *
    * @return array
-   *   Array with the asset data or NULL.
+   *   Array with the asset data.
    */
   private function decodeAssetValues(Request $request): array {
     $assetData = Json::decode($request->getContent());
