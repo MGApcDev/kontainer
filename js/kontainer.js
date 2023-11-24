@@ -53,7 +53,7 @@
           dataType: 'json',
           contentType: 'application/json',
           submit: data,
-          element: activeEl.closest('td'),
+          element: activeEl,
           progress: {
             type: 'throbber',
             message: Drupal.t('Downloading media from Kontainer...'),
