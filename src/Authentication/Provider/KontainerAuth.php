@@ -27,18 +27,7 @@ class KontainerAuth implements AuthenticationProviderInterface {
    */
   protected RouteProviderInterface $routeProvider;
 
-  /**
-   * Class constructor.
-   *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
-   *   Service "config.factory".
-   * @param \Drupal\Core\Routing\RouteProviderInterface $routeProvider
-   *   Service "router.route_provider".
-   */
-  public function __construct(
-    ConfigFactoryInterface $config_factory,
-    RouteProviderInterface $routeProvider
-  ) {
+  public function __construct(ConfigFactoryInterface $config_factory, RouteProviderInterface $routeProvider) {
     $this->configFactory = $config_factory;
     $this->routeProvider = $routeProvider;
   }

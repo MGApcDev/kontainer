@@ -29,18 +29,7 @@ class KontainerLinkConstraintValidator extends ConstraintValidator implements Co
    */
   protected KontainerServiceInterface $kontainerService;
 
-  /**
-   * Class constructor.
-   *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Service "config.factory".
-   * @param \Drupal\kontainer\Service\KontainerServiceInterface $kontainerService
-   *   Service "kontainer_service".
-   */
-  public function __construct(
-    ConfigFactoryInterface $configFactory,
-    KontainerServiceInterface $kontainerService
-  ) {
+  public function __construct(ConfigFactoryInterface $configFactory, KontainerServiceInterface $kontainerService) {
     $this->configFactory = $configFactory;
     $this->kontainerService = $kontainerService;
   }

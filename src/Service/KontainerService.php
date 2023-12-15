@@ -105,42 +105,7 @@ class KontainerService implements KontainerServiceInterface {
    */
   protected string $uploadDirectory = 'public://Kontainer';
 
-  /**
-   * Class constructor.
-   *
-   * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
-   *   Service "module_handler".
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Service "config.factory".
-   * @param \Drupal\Core\File\FileSystemInterface $fileSystem
-   *   Service "file_system".
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   Service "entity_type.manager".
-   * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
-   *   Service "current_user".
-   * @param \Drupal\Core\StringTranslation\TranslationInterface $stringTranslation
-   *   Service "string_translation".
-   * @param \Psr\Log\LoggerInterface $logger
-   *   Kontainer channel logger instance.
-   * @param \Drupal\entity_usage\EntityUsageInterface $entityUsage
-   *   Service "entity_usage.usage".
-   * @param \Drupal\Core\State\StateInterface $state
-   *   Service "state".
-   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
-   *   Service "entity_field.manager".
-   */
-  public function __construct(
-    ModuleHandlerInterface $moduleHandler,
-    ConfigFactoryInterface $configFactory,
-    FileSystemInterface $fileSystem,
-    EntityTypeManagerInterface $entityTypeManager,
-    AccountProxyInterface $currentUser,
-    TranslationInterface $stringTranslation,
-    LoggerInterface $logger,
-    EntityUsageInterface $entityUsage,
-    StateInterface $state,
-    EntityFieldManagerInterface $entityFieldManager
-  ) {
+  public function __construct(ModuleHandlerInterface $moduleHandler, ConfigFactoryInterface $configFactory, FileSystemInterface $fileSystem, EntityTypeManagerInterface $entityTypeManager, AccountProxyInterface $currentUser, TranslationInterface $stringTranslation, LoggerInterface $logger, EntityUsageInterface $entityUsage, StateInterface $state, EntityFieldManagerInterface $entityFieldManager) {
     $this->moduleHandler = $moduleHandler;
     $this->configFactory = $configFactory;
     $this->fileSystem = $fileSystem;

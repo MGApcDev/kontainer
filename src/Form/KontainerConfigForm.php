@@ -22,18 +22,7 @@ class KontainerConfigForm extends ConfigFormBase {
    */
   protected KontainerServiceInterface $kontainerService;
 
-  /**
-   * Class constructor.
-   *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Service "config.factory".
-   * @param \Drupal\kontainer\Service\KontainerServiceInterface $kontainerService
-   *   Service "kontainer_service".
-   */
-  public function __construct(
-    ConfigFactoryInterface $configFactory,
-    KontainerServiceInterface $kontainerService
-  ) {
+  public function __construct(ConfigFactoryInterface $configFactory, KontainerServiceInterface $kontainerService) {
     parent::__construct($configFactory);
     $this->kontainerService = $kontainerService;
   }

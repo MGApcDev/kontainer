@@ -39,33 +39,7 @@ class KontainerCdnItemWidget extends LinkWidget {
    */
   protected ConfigFactoryInterface $configFactory;
 
-  /**
-   * Class constructor.
-   *
-   * @param string $plugin_id
-   *   Plugin id.
-   * @param mixed $plugin_definition
-   *   Plugin definition.
-   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
-   *   Field definition.
-   * @param array $settings
-   *   Field settings.
-   * @param array $third_party_settings
-   *   Third party settings.
-   * @param \Drupal\kontainer\Service\KontainerServiceInterface $kontainerService
-   *   Service "kontainer_service".
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Service "config.factory".
-   */
-  public function __construct(
-    $plugin_id,
-    $plugin_definition,
-    FieldDefinitionInterface $field_definition,
-    array $settings,
-    array $third_party_settings,
-    KontainerServiceInterface $kontainerService,
-    ConfigFactoryInterface $configFactory
-    ) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, KontainerServiceInterface $kontainerService, ConfigFactoryInterface $configFactory) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings);
     $this->kontainerService = $kontainerService;
     $this->configFactory = $configFactory;

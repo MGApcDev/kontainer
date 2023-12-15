@@ -56,39 +56,7 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
    */
   protected CsrfTokenGenerator $csrfTokenGenerator;
 
-  /**
-   * Class constructor.
-   *
-   * @param string $plugin_id
-   *   Plugin id.
-   * @param mixed $plugin_definition
-   *   Plugin definition.
-   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
-   *   Field definition.
-   * @param array $settings
-   *   Field settings.
-   * @param array $third_party_settings
-   *   Third party settings.
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Service "config.factory".
-   * @param \Drupal\Core\Routing\RouteProviderInterface $routeProvider
-   *   Service "router.route_provider".
-   * @param \Drupal\kontainer\Service\KontainerServiceInterface $kontainerService
-   *   Service "kontainer_service".
-   * @param \Drupal\Core\Access\CsrfTokenGenerator $csrfTokenGenerator
-   *   Service "csrf_token".
-   */
-  public function __construct(
-    $plugin_id,
-    $plugin_definition,
-    FieldDefinitionInterface $field_definition,
-    array $settings,
-    array $third_party_settings,
-    ConfigFactoryInterface $configFactory,
-    RouteProviderInterface $routeProvider,
-    KontainerServiceInterface $kontainerService,
-    CsrfTokenGenerator $csrfTokenGenerator
-  ) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, ConfigFactoryInterface $configFactory, RouteProviderInterface $routeProvider, KontainerServiceInterface $kontainerService, CsrfTokenGenerator $csrfTokenGenerator) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings);
     $this->configFactory = $configFactory;
     $this->routeProvider = $routeProvider;

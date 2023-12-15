@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Drupal Module: Kontainer.
+ * Hook implementations for the Kontainer module.
  */
 
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
@@ -72,8 +72,8 @@ function kontainer_form_media_form_alter(array &$form, FormStateInterface $form_
  */
 function _kontainer_media_file_id_validate(&$form, FormStateInterface $form_state) {
   $asset = $form_state->getFormObject()->getEntity();
-  $formStateValue = $form_state->getValue('field_kontainer_file_id')[0]['value'];
-  if ($asset && $formStateValue != $asset->get('field_kontainer_file_id')->getString()) {
+  $form_state_value = $form_state->getValue('field_kontainer_file_id')[0]['value'];
+  if ($asset && $form_state_value != $asset->get('field_kontainer_file_id')->getString()) {
     $form_state->setErrorByName('field_kontainer_file_id', t('The Kontainer file id cannot be changed.'));
   }
 }
@@ -117,10 +117,10 @@ function kontainer_entity_insert(EntityInterface $entity) {
     /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
     $kontainer_service = \Drupal::service('kontainer_service');
     try {
-      $mediaTargets = $kontainer_service->getNestedTargets($entity);
-      $cdnTargets = $kontainer_service->getNestedTargets($entity, TRUE);
-      $kontainer_service->trackMediaStorageUsage($mediaTargets, $entity);
-      $kontainer_service->trackCdnUsage($cdnTargets, $entity);
+      $media_targets = $kontainer_service->getNestedTargets($entity);
+      $cdn_targets = $kontainer_service->getNestedTargets($entity, TRUE);
+      $kontainer_service->trackMediaStorageUsage($media_targets, $entity);
+      $kontainer_service->trackCdnUsage($cdn_targets, $entity);
     }
     catch (PluginNotFoundException | EntityMalformedException | InvalidPluginDefinitionException $e) {
       $kontainer_service->logException($e);
@@ -136,10 +136,10 @@ function kontainer_entity_update(EntityInterface $entity) {
     /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
     $kontainer_service = \Drupal::service('kontainer_service');
     try {
-      $mediaTargets = $kontainer_service->getNestedTargets($entity);
-      $cdnTargets = $kontainer_service->getNestedTargets($entity, TRUE);
-      $kontainer_service->trackMediaStorageUsage($mediaTargets, $entity);
-      $kontainer_service->trackCdnUsage($cdnTargets, $entity);
+      $media_targets = $kontainer_service->getNestedTargets($entity);
+      $cdn_targets = $kontainer_service->getNestedTargets($entity, TRUE);
+      $kontainer_service->trackMediaStorageUsage($media_targets, $entity);
+      $kontainer_service->trackCdnUsage($cdn_targets, $entity);
     }
     catch (PluginNotFoundException | EntityMalformedException | InvalidPluginDefinitionException $e) {
       $kontainer_service->logException($e);
@@ -168,8 +168,8 @@ function kontainer_media_predelete(EntityInterface $entity) {
   try {
     /** @var \Drupal\entity_usage\EntityUsageInterface $entity_usage */
     $entity_usage = \Drupal::service('entity_usage.usage');
-    $mediaTargets = $kontainer_service->getMasterSourceIds($entity_usage->listSources($entity));
-    $kontainer_service->deleteTargetUsage($mediaTargets, $entity->id());
+    $media_targets = $kontainer_service->getMasterSourceIds($entity_usage->listSources($entity));
+    $kontainer_service->deleteTargetUsage($media_targets, $entity->id());
   }
   catch (PluginNotFoundException | InvalidPluginDefinitionException $e) {
     $kontainer_service->logException($e);

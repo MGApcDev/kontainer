@@ -19,12 +19,6 @@ class KontainerFileAssetDeriver extends DeriverBase implements ContainerDeriverI
    */
   protected TranslationInterface $stringTranslation;
 
-  /**
-   * Class constructor.
-   *
-   * @param \Drupal\Core\StringTranslation\TranslationInterface $stringTranslation
-   *   Service "string_translation".
-   */
   public function __construct(TranslationInterface $stringTranslation) {
     $this->stringTranslation = $stringTranslation;
   }

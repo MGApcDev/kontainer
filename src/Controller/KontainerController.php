@@ -22,15 +22,7 @@ class KontainerController extends ControllerBase implements ContainerInjectionIn
    */
   protected KontainerServiceInterface $kontainerService;
 
-  /**
-   * Class constructor.
-   *
-   * @param \Drupal\kontainer\Service\KontainerServiceInterface $kontainerService
-   *   Service "kontainer_service".
-   */
-  public function __construct(
-    KontainerServiceInterface $kontainerService
-  ) {
+  public function __construct(KontainerServiceInterface $kontainerService) {
     $this->kontainerService = $kontainerService;
   }
 
