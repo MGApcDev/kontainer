@@ -49,7 +49,6 @@ function kontainer_field_formatter_info_alter(array &$info) {
  * Implements hook_form_BASE_FORM_ID_alter().
  */
 function kontainer_form_media_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
-  /** @var \Drupal\acquia_dam\Plugin\media\Source\Asset $asset */
   $asset = $form_state->getFormObject()->getEntity()->getSource();
   if (!$asset instanceof KontainerMediaSourceInterface) {
     return;
