@@ -13,7 +13,7 @@ use Drupal\media\Plugin\media\Source\Image;
  *   label = @Translation("Image (Kontainer)"),
  *   description = @Translation("Image assets from Kontainer DAM"),
  *   allowed_field_types = {"image"},
- *   default_thumbnail_filename = "no-thumbnail.png",
+ *   default_thumbnail_filename = "generic.png",
  *   thumbnail_alt_metadata_attribute = "thumbnail_alt_value"
  * )
  */

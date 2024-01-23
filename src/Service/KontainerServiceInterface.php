@@ -39,6 +39,13 @@ interface KontainerServiceInterface {
   const KONTAINER_FILE_TYPE = 'file';
 
   /**
+   * Machine name of the Drupal Kontainer CDN media type.
+   *
+   * @var string
+   */
+  const CDN_MEDIA_TYPE_NAME = 'kontainer_cdn';
+
+  /**
    * The mapping of Kontainer media types (keys) to Drupal media types (values).
    *
    * @var array
@@ -153,8 +160,6 @@ interface KontainerServiceInterface {
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The (current) source entity.
-   * @param bool $cdn
-   *   If TRUE, CDN URL targets are fetched, media storage targets otherwise.
    *
    * @return array
    *   Array with Kontainer target ids, if there are any.
@@ -162,7 +167,7 @@ interface KontainerServiceInterface {
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function getNestedTargets(ContentEntityInterface $entity, bool $cdn = FALSE): array;
+  public function getNestedTargets(ContentEntityInterface $entity): array;
 
   /**
    * Gets all the source (node) ids, also for nested paragraphs.
@@ -182,7 +187,7 @@ interface KontainerServiceInterface {
    * Rebuilds the Kontainer usage for Kontainer media per node.
    *
    * Tracks usage for the source entity. It is called, when the source (node)
-   * entity is being created or updated. Saved data to Drupal state.
+   * entity is being created or updated. Saves data to Drupal state.
    *
    * @param array $mediaTargets
    *   Array with media targets on the parent node.
@@ -193,34 +198,15 @@ interface KontainerServiceInterface {
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    * @throws \Drupal\Core\Entity\EntityMalformedException
    */
-  public function trackMediaStorageUsage(array $mediaTargets, NodeInterface $node): void;
-
-  /**
-   * Rebuilds the Kontainer usage for CDN URLs per node.
-   *
-   * Tracks usage for the source entity. It is called, when the source (node)
-   * entity is being created or updated. Saves data to Drupal state.
-   *
-   * @param array $cdnTargets
-   *   Array with CDN targets on the parent node.
-   * @param \Drupal\node\NodeInterface $node
-   *   The node entity.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   * @throws \Drupal\Core\Entity\EntityMalformedException
-   */
-  public function trackCdnUsage(array $cdnTargets, NodeInterface $node): void;
+  public function trackMediaUsage(array $mediaTargets, NodeInterface $node): void;
 
   /**
    * Removes usage for the source (node) entity, when it is being deleted.
    *
    * @param int $deletedSourceId
    *   The id of the node (source), that is being deleted.
-   * @param string $mediaSource
-   *   The media source for which to delete the usage.
    */
-  public function deleteSourceUsage(int $deletedSourceId, string $mediaSource): void;
+  public function deleteSourceUsage(int $deletedSourceId): void;
 
   /**
    * Removes usage for the target entities on source entities.
@@ -244,5 +230,31 @@ interface KontainerServiceInterface {
    *   Kontainer usage.
    */
   public function formatUsageData(array $kontainerUsage): array;
+
+  /**
+   * Checks if remote media source is enabled in Kontainer configuration.
+   *
+   * @return bool
+   *   TRUE if media source is set to CDN, FALSE if it's set to Media Storage.
+   */
+  public function isRemoteMediaSource(): bool;
+
+  /**
+   * Creates a Drupal file entity from the downloaded Kontainer file.
+   *
+   * @param string $assetUrl
+   *   Kontainer asset url.
+   * @param bool $uri
+   *   If set to TRUE, file uri is returned, instead of the file id. Defaults to
+   *   FALSE.
+   *
+   * @return int|string
+   *   The id of the created file or the file uri.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Exception
+   */
+  public function createFile(string $assetUrl, bool $uri = FALSE);
 
 }

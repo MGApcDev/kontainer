@@ -1,0 +1,14 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - kontainer
+id: kontainer_cdn
+label: 'Kontainer CDN'
+description: 'Kontainer CDN sourced media file'
+source: kontainer_cdn
+queue_thumbnail_downloads: false
+new_revision: true
+source_configuration:
+  source_field: field_media_kontainer_cdn
+field_map: {  }

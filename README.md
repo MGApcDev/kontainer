@@ -28,7 +28,8 @@ The Kontainer module enhances Drupal's media capabilities with key features:
   - Seamlessly import media into Drupal's media storage.
 
 **CDN Integration:**
-  - Directly import assets via Kontainer's content delivery network (CDN).
+  - Import assets via Kontainer's content delivery network (CDN) to Drupal's
+media storage.
 
 **Crop and Resize Templates:**
   - Define and apply customizable crop and resize templates for CDN-imported
@@ -41,11 +42,10 @@ where your files are being used.
 ***Note:***
 
 - For file usage tracking, Kontainer files are tracked only when used on node
-entites. By media storage, tracking is done for everything that is configured
+entites. Tracking is done for everything that is configured
 in the entity_usage module configuration (entity embed, entity reference,
 linkit...), but only if referenced directly on a node, nesting is tracked only
-for paragraphs. For CDN fields only fields directly in the node and fields in
-nested paragraphs are tracked.
+for paragraphs.
 
 ## Requirements
 
@@ -68,10 +68,11 @@ information.
        (/admin/config/media/kontainer). Enter your Kontainer URL (without any
        trailing /) and select the preferred media source.
 ***Note:***
-When adding new a new
-field to an entity, only the Kontainer field type of the selected media source
-is available. This setting can be toggled without any data loss or any
-limitation of usage of the field types on entities.
+The media source configuration indicates, to what media type the imported asset
+should be mapped in Drupal (CDN or one of the non-CDN types). The difference
+between the media storage settings is that the CDN media type has a URL field
+instead of a file field as source. This setting can be toggled without any data
+loss or any limitation of usage of the field types on entities.
 
     2.  The CDN media source also allows you to configure CDN image conversions
         on /admin/structure/cdn-image-conversion.
@@ -105,3 +106,4 @@ Supporting organizations:
 
 Current maintainers:
 * Domen Slogar - https://www.drupal.org/u/slogar32
+* Timotej Plamberger - https://www.drupal.org/u/timotej-pl

@@ -10,28 +10,22 @@ use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityMalformedException;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TypedData\Exception\MissingDataException;
 use Drupal\kontainer\Plugin\media\Source\KontainerMediaSourceInterface;
 use Drupal\kontainer\Service\KontainerServiceInterface;
+use Drupal\media\MediaInterface;
 use Drupal\node\NodeInterface;
 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
 function kontainer_form_field_ui_field_storage_add_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  // Toggles field availability of custom field types from this module in the
-  // "Add a new field" select on the FieldStorageAddForm, based on the
-  // configured media source.
-  $kontainer_media_source = \Drupal::config('kontainer.settings')->get('kontainer_media_source');
-  switch ($kontainer_media_source) {
-    case KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE:
-      unset($form['add']['new_storage_type']['#options']['Reference']['kontainer_cdn']);
-      break;
-
-    case KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_CDN_URL:
-    default:
-      unset($form['add']['new_storage_type']['#options']['Reference']['kontainer_media_reference']);
-
+  // Drupal 10.2 logic for disabling the field.
+  if (array_key_exists('kontainer_cdn', $form['add']['new_storage_type'])) {
+    unset($form['add']['new_storage_type']['kontainer_cdn']);
   }
+  // Drupal 9 and pre 10.2 logic for disabling the field.
+  unset($form['add']['new_storage_type']['#options']['Reference']['kontainer_cdn']);
 }
 
 /**
@@ -55,8 +49,16 @@ function kontainer_form_media_form_alter(array &$form, FormStateInterface $form_
   }
   // Disable add form save button for DAM assets.
   if (str_ends_with($form_id, '_add_form')) {
-    \Drupal::messenger()->addWarning('Kontainer assets cannot be added from this form, only through the Kontainer media storage field when creating content.');
-    $form['actions']['submit']['#disabled'] = TRUE;
+    /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+    $kontainer_service = \Drupal::service('kontainer_service');
+    if (!$kontainer_service->isRemoteMediaSource()) {
+      \Drupal::messenger()->addWarning('Kontainer CDN type can be used when Kontainer media source is set to CDN.');
+      $form['actions']['submit']['#disabled'] = TRUE;
+    }
+    if ($form_id !== 'media_kontainer_cdn_add_form') {
+      \Drupal::messenger()->addWarning('Kontainer assets cannot be added from this form, only through the Kontainer media storage field when creating content.');
+      $form['actions']['submit']['#disabled'] = TRUE;
+    }
   }
   if (isset($form['field_kontainer_file_id'])) {
     $form['field_kontainer_file_id']['widget'][0]['value']['#attributes']['readonly'] = 'readonly';
@@ -117,9 +119,7 @@ function kontainer_entity_insert(EntityInterface $entity) {
     $kontainer_service = \Drupal::service('kontainer_service');
     try {
       $media_targets = $kontainer_service->getNestedTargets($entity);
-      $cdn_targets = $kontainer_service->getNestedTargets($entity, TRUE);
-      $kontainer_service->trackMediaStorageUsage($media_targets, $entity);
-      $kontainer_service->trackCdnUsage($cdn_targets, $entity);
+      $kontainer_service->trackMediaUsage($media_targets, $entity);
     }
     catch (PluginNotFoundException | EntityMalformedException | InvalidPluginDefinitionException $e) {
       $kontainer_service->logException($e);
@@ -136,9 +136,7 @@ function kontainer_entity_update(EntityInterface $entity) {
     $kontainer_service = \Drupal::service('kontainer_service');
     try {
       $media_targets = $kontainer_service->getNestedTargets($entity);
-      $cdn_targets = $kontainer_service->getNestedTargets($entity, TRUE);
-      $kontainer_service->trackMediaStorageUsage($media_targets, $entity);
-      $kontainer_service->trackCdnUsage($cdn_targets, $entity);
+      $kontainer_service->trackMediaUsage($media_targets, $entity);
     }
     catch (PluginNotFoundException | EntityMalformedException | InvalidPluginDefinitionException $e) {
       $kontainer_service->logException($e);
@@ -153,8 +151,7 @@ function kontainer_entity_delete(EntityInterface $entity) {
   /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
   $kontainer_service = \Drupal::service('kontainer_service');
   if ($entity instanceof NodeInterface) {
-    $kontainer_service->deleteSourceUsage($entity->id(), KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE);
-    $kontainer_service->deleteSourceUsage($entity->id(), KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_CDN_URL);
+    $kontainer_service->deleteSourceUsage($entity->id());
   }
 }
 

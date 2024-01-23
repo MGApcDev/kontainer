@@ -20,6 +20,11 @@
             "name": "Domen Slogar (slogar32)",
             "homepage": "https://www.drupal.org/u/slogar32",
             "role": "Maintainer"
+        },
+        {
+            "name": "Timotej Plamberger (timotej-pl)",
+            "homepage": "https://www.drupal.org/u/timotej-pl",
+            "role": "Maintainer"
         }
     ],
     "support": {

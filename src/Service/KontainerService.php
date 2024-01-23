@@ -122,27 +122,39 @@ class KontainerService implements KontainerServiceInterface {
    * {@inheritDoc}
    */
   public function createEntities(array $assetData): array {
-    $assetType = $assetData['type'] ?? NULL;
+    $assetType = $assetData['type'] ?? self::KONTAINER_FILE_TYPE;
     $assetUrl = $assetData['thumbnailUrl'] ?? ($assetData['url'] ?? NULL);
-    $assetExtension = $assetData['extension'] ?? NULL;
     $assetName = $assetData['fileName'] ?? NULL;
-    $assetAlt = $assetData['alt'] ?? NULL;
     $assetKontainerFileId = $assetData['fileId'] ?? NULL;
+    $remoteMediaSource = $this->isRemoteMediaSource();
     if (empty($assetUrl)) {
       throw new \Exception('No file url provided from Kontainer.');
     }
-    if (empty(self::MEDIA_TYPES_MAPPING[$assetData['type']])) {
+    if (!$remoteMediaSource && empty(self::MEDIA_TYPES_MAPPING[$assetData['type']])) {
       throw new \Exception('Unsupported asset type.');
     }
     if (empty($assetKontainerFileId)) {
       throw new \Exception('No Kontainer file id provided from Kontainer.');
     }
-    $this->checkAccess(self::MEDIA_TYPES_MAPPING[$assetData['type']]);
-    $mediaType = $this->getMediaType($assetType);
-    $sourceFieldName = $this->getMediaTypeSourceField($mediaType);
-    $this->validateMediaTypeExtensions($assetType, $sourceFieldName, $assetExtension);
-    $fileId = $this->createFile($assetUrl);
-    return $this->createMedia($this->generateMediaValues($fileId, $assetKontainerFileId, $assetType, $assetName, $sourceFieldName, $assetAlt));
+    $mediaType = $remoteMediaSource ? self::CDN_MEDIA_TYPE_NAME : self::MEDIA_TYPES_MAPPING[$assetType];
+    $this->checkAccess($mediaType);
+    $mediaTypeLoaded = $this->getMediaType($mediaType);
+    $sourceFieldName = $this->getMediaTypeSourceField($mediaTypeLoaded);
+    if ($remoteMediaSource) {
+      $assetUrlBaseName = $assetData['urlBaseName'] ?? NULL;
+      if (empty($assetUrlBaseName)) {
+        throw new \Exception('No Kontainer URL base name provided from Kontainer.');
+      }
+      $mediaValues = $this->generateRemoteMediaValues($assetKontainerFileId, $assetType, $assetName, $sourceFieldName, $assetUrlBaseName, $assetUrl);
+    }
+    else {
+      $assetAlt = $assetData['alt'] ?? NULL;
+      $assetExtension = $assetData['extension'] ?? NULL;
+      $this->validateMediaTypeExtensions($assetType, $sourceFieldName, $assetExtension);
+      $fileId = $this->createFile($assetUrl);
+      $mediaValues = $this->generateMediaValues($fileId, $assetKontainerFileId, $assetType, $assetName, $sourceFieldName, $assetAlt);
+    }
+    return $this->createMedia($mediaValues);
   }
 
   /**
@@ -237,7 +249,7 @@ class KontainerService implements KontainerServiceInterface {
   /**
    * {@inheritDoc}
    */
-  public function getNestedTargets(ContentEntityInterface $entity, bool $cdn = FALSE): array {
+  public function getNestedTargets(ContentEntityInterface $entity): array {
     $entityTargets = $this->entityUsage->listTargets($entity, $entity->getRevisionId());
     $mediaTargets = [];
     if (!empty($entityTargets['paragraph'])) {
@@ -247,17 +259,12 @@ class KontainerService implements KontainerServiceInterface {
           ->getStorage('paragraph')
           ->load($paragraphId);
         if (!empty($paragraph)) {
-          $mediaTargets += $this->getNestedTargets($paragraph, $cdn);
+          $mediaTargets += $this->getNestedTargets($paragraph);
         }
       }
     }
-    if ($cdn) {
-      $this->getCdnTargets($entity, $mediaTargets);
-    }
-    else {
-      if (!empty($entityTargets['media'])) {
-        $mediaTargets += $entityTargets['media'];
-      }
+    if (!empty($entityTargets['media'])) {
+      $mediaTargets += $entityTargets['media'];
     }
     return $mediaTargets;
   }
@@ -292,8 +299,8 @@ class KontainerService implements KontainerServiceInterface {
   /**
    * {@inheritDoc}
    */
-  public function trackMediaStorageUsage(array $mediaTargets, NodeInterface $node): void {
-    $this->deleteSourceUsage($node->id(), self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE);
+  public function trackMediaUsage(array $mediaTargets, NodeInterface $node): void {
+    $this->deleteSourceUsage($node->id());
     $kontainerUsage = $this->state->get('kontainer_usage') ?? [];
     if ($mediaIds = array_keys($mediaTargets)) {
       $nodeId = $node->id();
@@ -306,12 +313,20 @@ class KontainerService implements KontainerServiceInterface {
         if (!$sourcePlugin instanceof KontainerMediaSourceInterface) {
           continue;
         }
-        $kontainerFileId = $media->get('field_kontainer_file_id')->getString();
+        $sourceType = self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE;
+        if ($media->bundle() === self::CDN_MEDIA_TYPE_NAME) {
+          $sourceType = self::KONTAINER_MEDIA_SOURCE_CDN_URL;
+          $kontainerCdnSourceField = $media->get('field_media_kontainer_cdn')->first()->getValue();
+          $kontainerFileId = $kontainerCdnSourceField['kontainer_file_id'] ?? NULL;
+        }
+        else {
+          $kontainerFileId = $media->get('field_kontainer_file_id')->getString();
+        }
         if (!$kontainerFileId) {
           continue;
         }
         $mediaId = $media->id();
-        $kontainerUsage[$kontainerFileId][$nodeId][self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE][$mediaId] = [
+        $kontainerUsage[$kontainerFileId][$nodeId][$sourceType][$mediaId] = [
           'nodeId' => $nodeId,
           'nodeUrl' => $node->toUrl('canonical', ['absolute' => TRUE])
             ->toString(),
@@ -320,7 +335,7 @@ class KontainerService implements KontainerServiceInterface {
           'mediaUrl' => $media->toUrl('canonical', ['absolute' => TRUE])
             ->toString(),
           'kontainerFileId' => $kontainerFileId,
-          'mediaSourceType' => self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE,
+          'mediaSourceType' => $sourceType,
         ];
       }
     }
@@ -330,35 +345,14 @@ class KontainerService implements KontainerServiceInterface {
   /**
    * {@inheritDoc}
    */
-  public function trackCdnUsage(array $cdnTargets, NodeInterface $node): void {
-    $this->deleteSourceUsage($node->id(), self::KONTAINER_MEDIA_SOURCE_CDN_URL);
-    if (!empty($cdnTargets)) {
-      $kontainerUsage = $this->state->get('kontainer_usage') ?? [];
-      $nodeId = $node->id();
-      foreach ($cdnTargets as $kontainerFileId) {
-        $kontainerUsage[$kontainerFileId][$nodeId][self::KONTAINER_MEDIA_SOURCE_CDN_URL][] = [
-          'nodeId' => $nodeId,
-          'nodeUrl' => $node->toUrl('canonical', ['absolute' => TRUE])
-            ->toString(),
-          'nodeTitle' => $node->getTitle(),
-          'kontainerFileId' => $kontainerFileId,
-          'mediaSourceType' => self::KONTAINER_MEDIA_SOURCE_CDN_URL,
-        ];
-      }
-      $this->state->set('kontainer_usage', $kontainerUsage);
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public function deleteSourceUsage(int $deletedSourceId, string $mediaSource): void {
+  public function deleteSourceUsage(int $deletedSourceId): void {
     $kontainerUsage = $this->state->get('kontainer_usage');
     if (!empty($kontainerUsage)) {
       foreach ($kontainerUsage as $kontainerFileId => &$kontainerUsageData) {
         foreach ($kontainerUsageData as $sourceId => $targetsByMediaSource) {
           if ($deletedSourceId == $sourceId) {
-            unset($kontainerUsageData[$sourceId][$mediaSource]);
+            unset($kontainerUsageData[$sourceId][self::KONTAINER_MEDIA_SOURCE_CDN_URL]);
+            unset($kontainerUsageData[$sourceId][self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE]);
           }
           if (empty($kontainerUsageData[$sourceId])) {
             unset($kontainerUsageData[$sourceId]);
@@ -381,11 +375,13 @@ class KontainerService implements KontainerServiceInterface {
       if (!empty($kontainerUsage)) {
         foreach ($kontainerUsage as $kontainerFileId => &$kontainerUsageData) {
           foreach ($kontainerUsageData as $sourceId => &$targetsByMediaSource) {
-            if (in_array($sourceId, $sourceIds) && isset($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE][$targetId])) {
-              unset($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE][$targetId]);
-            }
-            if (empty($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE])) {
-              unset($targetsByMediaSource[self::KONTAINER_MEDIA_SOURCE_MEDIA_STORAGE]);
+            foreach ($targetsByMediaSource as $mediaSource => &$targets) {
+              if (in_array($sourceId, $sourceIds) && isset($targets[$targetId])) {
+                unset($targets[$targetId]);
+              }
+              if (empty($targets)) {
+                unset($targetsByMediaSource[$mediaSource]);
+              }
             }
             if (empty($targetsByMediaSource)) {
               unset($kontainerUsageData[$sourceId]);
@@ -410,10 +406,6 @@ class KontainerService implements KontainerServiceInterface {
       foreach ($kontainerUsageData as $targetsByMediaSource) {
         foreach ($targetsByMediaSource as $targetsData) {
           foreach ($targetsData as $targetData) {
-            // NOTE: By CDN media source type, there will always be only one
-            // entry per Kontainer file id per node (if there are multiple CDN
-            // URL instances of the same Kontainer file on a node, usage data is
-            // the same for all, hence only one is stored).
             $usages[] = $targetData;
           }
         }
@@ -424,6 +416,30 @@ class KontainerService implements KontainerServiceInterface {
       ];
     }
     return $kontainerUsageFormatted;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function isRemoteMediaSource(): bool {
+    return $this->configFactory->get('kontainer.settings')->get('kontainer_media_source') === self::KONTAINER_MEDIA_SOURCE_CDN_URL;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function createFile(string $assetUrl, bool $uri = FALSE) {
+    if ($this->fileSystem->prepareDirectory($this->uploadDirectory, FileSystemInterface::CREATE_DIRECTORY)) {
+      /** @var \Drupal\file\FileInterface $file */
+      $file = system_retrieve_file($assetUrl, $this->uploadDirectory, TRUE);
+      if (!$file) {
+        throw new \Exception('Could not create the Drupal file entity.');
+      }
+      return $uri ? $file->getFileUri() : $file->id();
+    }
+    else {
+      throw new \Exception('Could not create the file directory.');
+    }
   }
 
   /**
@@ -454,37 +470,10 @@ class KontainerService implements KontainerServiceInterface {
   }
 
   /**
-   * Returns Kontainer CDN URL targets used on an entity.
+   * Returns the loaded media type.
    *
-   * Checks if the entity has a field of type Kontainer CDN and adds the values
-   * from the field(s) to the targets array.
-   *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   The (current) source entity.
-   * @param array $mediaTargets
-   *   Array with Kontainer targets.
-   */
-  private function getCdnTargets(ContentEntityInterface $entity, array &$mediaTargets) {
-    $cdnFields = $this->entityFieldManager->getFieldMapByFieldType('kontainer_cdn');
-    $entityFields = $entity->getFieldDefinitions();
-    if (isset($cdnFields[$entity->getEntityTypeId()])) {
-      foreach ($cdnFields[$entity->getEntityTypeId()] as $fieldMachineName => $field) {
-        if (isset($entityFields[$fieldMachineName]) && !$entity->get($fieldMachineName)->isEmpty()) {
-          foreach ($entity->get($fieldMachineName)->getValue() as $fieldEntries) {
-            if (isset($fieldEntries['kontainer_file_id'])) {
-              $mediaTargets[$fieldEntries['kontainer_file_id']] = $fieldEntries['kontainer_file_id'];
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Maps the Kontainer media type to the Drupal media type and loads it.
-   *
-   * @param string $assetType
-   *   Kontainer asset type.
+   * @param string $mediaType
+   *   Media type machine name.
    *
    * @return null|\Drupal\media\MediaTypeInterface
    *   Media type entity object or NULL.
@@ -493,21 +482,15 @@ class KontainerService implements KontainerServiceInterface {
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    * @throws \Exception
    */
-  private function getMediaType(string $assetType): ?MediaTypeInterface {
-    // Fallback to the file media type, if there is no asset type specified.
-    if (empty($assetType)) {
-      $mediaType = self::MEDIA_TYPES_MAPPING[self::KONTAINER_FILE_TYPE];
+  private function getMediaType(string $mediaType): ?MediaTypeInterface {
+    /** @var \Drupal\media\MediaTypeInterface $mediaTypeLoaded */
+    $mediaTypeLoaded = $this->entityTypeManager
+      ->getStorage('media_type')
+      ->load($mediaType);
+    if (empty($mediaTypeLoaded)) {
+      throw new \Exception('Drupal media type could not be loaded.');
     }
-    else {
-      /** @var \Drupal\media\MediaTypeInterface $mediaType */
-      $mediaType = $this->entityTypeManager
-        ->getStorage('media_type')
-        ->load(self::MEDIA_TYPES_MAPPING[$assetType]);
-      if (empty($mediaType)) {
-        throw new \Exception('Drupal media type could not be loaded.');
-      }
-    }
-    return $mediaType;
+    return $mediaTypeLoaded;
   }
 
   /**
@@ -563,33 +546,6 @@ class KontainerService implements KontainerServiceInterface {
   }
 
   /**
-   * Creates a Drupal file entity from the downloaded Kontainer file.
-   *
-   * @param string $assetUrl
-   *   Kontainer asset url.
-   *
-   * @return int
-   *   The id of the created file.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   * @throws \Exception
-   */
-  private function createFile(string $assetUrl): int {
-    if ($this->fileSystem->prepareDirectory($this->uploadDirectory, FileSystemInterface::CREATE_DIRECTORY)) {
-      /** @var \Drupal\file\FileInterface $file */
-      $file = system_retrieve_file($assetUrl, $this->uploadDirectory, TRUE);
-      if (!$file) {
-        throw new \Exception('Could not create the Drupal file entity.');
-      }
-      return $file->id();
-    }
-    else {
-      throw new \Exception('Could not create the file directory.');
-    }
-  }
-
-  /**
    * Generates the media type field values.
    *
    * @param int $fileId
@@ -616,7 +572,6 @@ class KontainerService implements KontainerServiceInterface {
       $sourceFieldValues['alt'] = $imageAltAttribute ?? $this->stringTranslation->translate('Kontainer image');
       $sourceFieldValues['title'] = $assetName;
     }
-
     return [
       'bundle' => self::MEDIA_TYPES_MAPPING[$assetType],
       'name' => $assetName,
@@ -624,6 +579,41 @@ class KontainerService implements KontainerServiceInterface {
       'status' => TRUE,
       $sourceFieldName => $sourceFieldValues,
       'field_kontainer_file_id' => $kontainerFileId,
+    ];
+  }
+
+  /**
+   * Generates field values for the remote media type.
+   *
+   * @param int $kontainerFileId
+   *   Kontainer file id.
+   * @param string $assetType
+   *   Kontainer asset type.
+   * @param null|string $assetName
+   *   Kontainer asset name.
+   * @param string $sourceFieldName
+   *   Media type source field machine name.
+   * @param string $assetUrlBaseName
+   *   Kontainer asset URL base name.
+   * @param string $assetUrl
+   *   Kontainer asset URL.
+   *
+   * @return array
+   *   Array with media type field values.
+   */
+  public function generateRemoteMediaValues(int $kontainerFileId, string $assetType, ?string $assetName, string $sourceFieldName, string $assetUrlBaseName, string $assetUrl): array {
+    return [
+      'bundle' => self::CDN_MEDIA_TYPE_NAME,
+      'name' => $assetName,
+      'uid' => $this->currentUser->id(),
+      'status' => TRUE,
+      $sourceFieldName => [
+        'media_type' => $assetType,
+        'kontainer_file_name' => $assetName,
+        'kontainer_file_id' => $kontainerFileId,
+        'base_uri' => $assetUrlBaseName,
+        'uri' => $assetUrl,
+      ],
     ];
   }
 

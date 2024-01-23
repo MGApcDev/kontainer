@@ -151,6 +151,13 @@ class KontainerReferenceItemWidget extends EntityReferenceAutocompleteWidget {
    * Submit callback to clear the widget field values.
    */
   public function removeValue(array &$form, FormStateInterface $form_state): AjaxResponse {
+    // @todo After Drupal 10.2, if used in paragraphs, all entries are removed,
+    // @todo because $delta is always the same for a paragraph field. Either
+    // @todo disable the remove button for paragraph reference fields (because
+    // @todo the remove button from paragraphs can be used) or add subform
+    // @todo deltas from $form['#parents'] to data-kontainer-selector
+    // @todo attributes.
+    // @see https://www.drupal.org/project/kontainer/issues/3416428.
     $button = $form_state->getTriggeringElement();
     $delta = $button['#attributes']['widget-delta'];
     $fieldMachineName = $button['#attributes']['field-machine-name'];

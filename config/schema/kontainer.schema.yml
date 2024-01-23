@@ -41,6 +41,9 @@ media.source.kontainer_image:
 media.source.kontainer_video:
   type: media.source.field_aware
   label: 'Kontainer video asset media source configuration'
+media.source.kontainer_cdn:
+  type: media.source.field_aware
+  label: 'Kontainer CDN asset media source configuration'
 field.widget.settings.kontainer_cdn:
   type: mapping
   label: 'Link format settings'
