@@ -20,9 +20,11 @@
     }
   };
   function receiveMessage(event) {
-    if (event) {
-      postBack(event.data);
+    if (!event.origin.startsWith(drupalSettings.kontainer.kontainerUrl)) {
+      return;
     }
+
+    postBack(event.data);
   }
   function postBack(data) {
     if (data !== '' && data !== null) {
