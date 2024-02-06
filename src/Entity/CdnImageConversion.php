@@ -48,7 +48,9 @@ use Drupal\kontainer\CdnImageConversionInterface;
  *     "id",
  *     "label",
  *     "template_id",
- *     "format"
+ *     "format",
+ *     "dimensions",
+ *     "image_style"
  *   }
  * )
  * @todo Possible feature: fetch and create from templates via Kontainer API.
@@ -89,6 +91,20 @@ class CdnImageConversion extends ConfigEntityBase implements CdnImageConversionI
    * @var string
    */
   protected $format;
+
+  /**
+   * The width of Kontainer template.
+   *
+   * @var int
+   */
+  protected $dimensions;
+
+  /**
+   * Mapped Drupal Image style id.
+   *
+   * @var string
+   */
+  protected $image_style;
 
   /**
    * {@inheritdoc}

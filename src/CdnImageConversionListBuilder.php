@@ -18,6 +18,8 @@ class CdnImageConversionListBuilder extends ConfigEntityListBuilder {
     $header['id'] = $this->t('Machine name');
     $header['template_id'] = $this->t('Template id');
     $header['format'] = $this->t('Format');
+    $header['dimensions'] = $this->t('Dimensions (width)');
+    $header['image_style'] = $this->t('Image style');
     $header['status'] = $this->t('Status');
     return $header + parent::buildHeader();
   }
@@ -31,6 +33,8 @@ class CdnImageConversionListBuilder extends ConfigEntityListBuilder {
     $row['id'] = $entity->id();
     $row['tempalte_id'] = $entity->get('template_id');
     $row['format'] = $entity->get('format');
+    $row['dimensions'] = $entity->get('dimensions');
+    $row['image_style to'] = $entity->get('image_style');
     $row['status'] = $entity->status() ? $this->t('Enabled') : $this->t('Disabled');
     return $row + parent::buildRow($entity);
   }

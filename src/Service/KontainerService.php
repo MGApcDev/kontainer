@@ -2,6 +2,7 @@
 
 namespace Drupal\kontainer\Service;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
@@ -230,7 +231,6 @@ class KontainerService implements KontainerServiceInterface {
     foreach ($conversions as $name => $conversion) {
       $options[$name] = $conversion->label();
     }
-
     if (empty($options)) {
       $options[''] = $this->stringTranslation->translate('No defined conversions');
     }
@@ -428,6 +428,13 @@ class KontainerService implements KontainerServiceInterface {
   /**
    * {@inheritDoc}
    */
+  public function getDefaultCdnConversionTemplateId(): string {
+    return $this->configFactory->get('kontainer.settings')->get('kontainer_cdn_conversion_fallback') ?? '';
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   public function createFile(string $assetUrl, bool $uri = FALSE) {
     if ($this->fileSystem->prepareDirectory($this->uploadDirectory, FileSystemInterface::CREATE_DIRECTORY)) {
       /** @var \Drupal\file\FileInterface $file */
@@ -615,6 +622,22 @@ class KontainerService implements KontainerServiceInterface {
         'uri' => $assetUrl,
       ],
     ];
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function invalidateKontainerCdnSourcedMediaEntities(): void {
+    $mediaBundles = $this->entityTypeManager->getStorage('media_type')->loadMultiple();
+    foreach ($mediaBundles as $bundle) {
+      $sourceField = $bundle->getSource()->getSourceFieldDefinition($bundle);
+      if ($sourceField && $sourceField->getType() === 'kontainer_cdn') {
+        $mediaEntities = $this->entityTypeManager->getStorage('media')->loadByProperties(['bundle' => $bundle->id()]);
+        foreach ($mediaEntities as $mediaEntity) {
+          Cache::invalidateTags($mediaEntity->getCacheTags());
+        }
+      }
+    }
   }
 
   /**

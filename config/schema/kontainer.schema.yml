@@ -14,6 +14,9 @@ kontainer.settings:
     integration_secret:
       type: string
       label: 'Integration secret'
+    kontainer_cdn_conversion_fallback:
+      type: string
+      label: 'Image Conversion fallback'
 kontainer.cdn_image_conversion.*:
   type: config_entity
   label: Cdn Image Conversion
@@ -77,3 +80,11 @@ field.formatter.settings.kontainer_cdn:
     image_conversion:
       type: string
       label: 'Image conversion'
+
+field.formatter.settings.kontainer_responsive_cdn:
+  type: mapping
+  label: 'Kontainer responsive CDN display format settings'
+  mapping:
+    responsive_image_style:
+      type: string
+      label: 'Responsive image style'

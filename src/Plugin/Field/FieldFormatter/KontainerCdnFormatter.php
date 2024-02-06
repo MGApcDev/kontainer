@@ -135,7 +135,7 @@ class KontainerCdnFormatter extends FormatterBase {
           $elements[$delta] = [
             '#theme' => 'image',
             '#uri' => $uri ?? $item->uri,
-            '#alt' => !empty($item->kontainer_file_name) ? $item->kontainer_file_name : 'kontainer_image',
+            '#alt' => !empty($item->kontainer_file_name) ? $item->kontainer_file_name : $this->t('kontainer_image'),
           ];
           break;
 

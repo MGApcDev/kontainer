@@ -58,6 +58,26 @@ class CdnImageConversionForm extends EntityForm {
       '#required' => TRUE,
     ];
 
+    $form['dimensions'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Dimensions'),
+      '#default_value' => $this->entity->get('dimensions') ?? 0,
+      '#description' => $this->t('The width of the Kontainer template.'),
+      '#min' => 0,
+      '#required' => TRUE,
+    ];
+
+    $image_styles = image_style_options();
+
+    $form['image_style'] = [
+      '#title' => $this->t('Drupal image style'),
+      '#type' => 'select',
+      '#default_value' => $this->entity->get('image_style'),
+      '#options' => $image_styles,
+      '#required' => TRUE,
+      '#description' => $this->t('Select the Drupal image style you wish to map the Kontainer template to.'),
+    ];
+
     $form['status'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enabled'),

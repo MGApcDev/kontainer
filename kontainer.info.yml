@@ -8,5 +8,6 @@ dependencies:
   - drupal:file
   - drupal:image
   - drupal:media
+  - drupal:responsive_image
   - entity_usage:entity_usage (>= 8.x-2.x)
 configure: kontainer.admin.config

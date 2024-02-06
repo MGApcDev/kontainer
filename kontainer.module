@@ -5,16 +5,32 @@
  * Hook implementations for the Kontainer module.
  */
 
+use Drupal\breakpoint\BreakpointInterface;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityMalformedException;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\TypedData\Exception\MissingDataException;
+use Drupal\Core\Logger\RfcLogLevel;
+use Drupal\Core\Template\Attribute;
 use Drupal\kontainer\Plugin\media\Source\KontainerMediaSourceInterface;
-use Drupal\kontainer\Service\KontainerServiceInterface;
-use Drupal\media\MediaInterface;
 use Drupal\node\NodeInterface;
+
+/**
+ * Implements hook_theme().
+ */
+function kontainer_theme() {
+  return [
+    'responsive_kontainer_cdn_image' => [
+      'variables' => [
+        'uri' => NULL,
+        'items' => [],
+        'responsive_image_style_id' => NULL,
+        'alt' => NULL,
+      ],
+    ],
+  ];
+}
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -170,4 +186,130 @@ function kontainer_media_predelete(EntityInterface $entity) {
   catch (PluginNotFoundException | InvalidPluginDefinitionException $e) {
     $kontainer_service->logException($e);
   }
+}
+
+/**
+ * Prepares variables for a Kontainer CDN responsive image.
+ *
+ * Default template: responsive-kontainer-cdn-image.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - items: Formatted arrays with data for each image style.
+ *   - alt: Alternative text from the original Kontainer template item.
+ *   - responsive_image_style_id: The ID of the responsive image style.
+ *
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ *   Thrown if the entity type doesn't exist.
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ *   Thrown if the storage handler couldn't be loaded.
+ *
+ * @see template_preprocess_responsive_image
+ */
+function template_preprocess_responsive_kontainer_cdn_image(&$variables) {
+  /** @var \Drupal\responsive_image\ResponsiveImageStyleInterface $responsive_image_style */
+  $responsive_image_style = \Drupal::entityTypeManager()
+    ->getStorage('responsive_image_style')
+    ->load($variables['responsive_image_style_id']);
+  if (!$responsive_image_style) {
+    $variables['img_element'] = [];
+    \Drupal::logger('kontainer')->log(RfcLogLevel::ERROR,
+      'Failed to load responsive image style: “@style“ while displaying responsive image.',
+      ['@style' => $variables['responsive_image_style_id']]);
+    return;
+  }
+  /** @var \Drupal\breakpoint\BreakpointManagerInterface $breakpoint_manager */
+  $breakpoint_manager = \Drupal::service('breakpoint.manager');
+  $breakpoints = array_reverse($breakpoint_manager->getBreakpointsByGroup($responsive_image_style->getBreakpointGroup()));
+  foreach ($responsive_image_style->getKeyedImageStyleMappings() as $breakpoint_id => $multipliers) {
+    if (isset($breakpoints[$breakpoint_id])) {
+      $variables['sources'][] = _kontainer_cdn_image_build_source_attributes($variables, $breakpoints[$breakpoint_id], $multipliers);
+    }
+  }
+  if (isset($variables['sources']) && count($variables['sources']) === 1 && !isset($variables['sources'][0]['media'])) {
+    $variables['output_image_tag'] = TRUE;
+    foreach ($variables['sources'][0] as $attribute => $value) {
+      if ($attribute != 'type') {
+        $variables['attributes'][$attribute] = $value;
+      }
+    }
+  }
+  else {
+    $variables['output_image_tag'] = FALSE;
+  }
+  $variables['img_element'] = [
+    '#theme' => 'image',
+    '#uri' => $variables['items'][$responsive_image_style->getFallbackImageStyle()]['url'],
+    '#attributes' => [],
+  ];
+  if (isset($variables['alt'])) {
+    $variables['img_element']['#alt'] = $variables['alt'];
+  }
+  if (isset($variables['attributes'])) {
+    $variables['img_element']['#attributes'] = $variables['attributes'];
+  }
+}
+
+/**
+ * Helper function for template_preprocess_responsive_kontainer_cdn_image().
+ *
+ * Builds an array of attributes for <source> tags to be used in a <picture>
+ * tag. In other words, this function provides the attributes for each <source>
+ * tag in a <picture> tag.
+ *
+ * @param array $variables
+ *   An array with the following keys:
+ *    - items: Formatted arrays with data for each image style.
+ *    - alt: Alternative text from the original Kontainer template item.
+ *    - responsive_image_style_id: The ID of the responsive image style.
+ * @param \Drupal\breakpoint\BreakpointInterface $breakpoint
+ *   The breakpoint for this source tag.
+ * @param array $multipliers
+ *   An array with multipliers as keys and image style mappings as values.
+ *
+ * @return \Drupal\Core\Template\Attribute
+ *   An object of attributes for the source tag.
+ *
+ * @see _responsive_image_build_source_attributes
+ */
+function _kontainer_cdn_image_build_source_attributes(array $variables, BreakpointInterface $breakpoint, array $multipliers) {
+  $sizes = [];
+  $srcset = [];
+  $derivative_mime_types = [];
+  foreach (array_reverse($multipliers) as $multiplier => $image_style_mapping) {
+    switch ($image_style_mapping['image_mapping_type']) {
+      case 'sizes':
+        foreach ($image_style_mapping['image_mapping']['sizes_image_styles'] as $image_style_name) {
+          if (array_key_exists($image_style_name, $variables['items'])) {
+            $dimensions = $variables['items'][$image_style_name]['width'];
+            $derivative_mime_type = responsive_image_get_mime_type($image_style_name, $variables['items'][$image_style_name]['extension']);
+            $derivative_mime_types[] = $derivative_mime_type;
+            $srcset[intval($dimensions)] = $variables['items'][$image_style_name]['url'] . ' ' . $dimensions . 'w';
+            $sizes = array_merge(explode(',', $image_style_mapping['image_mapping']['sizes']), $sizes);
+          }
+        }
+        break;
+
+      case 'image_style':
+        $derivative_mime_type = responsive_image_get_mime_type($image_style_mapping['image_mapping'], $variables['items'][$image_style_mapping['image_mapping']]['extension']);
+        $derivative_mime_types[] = $derivative_mime_type;
+        $srcset[intval(mb_substr($multiplier, 0, -1) * 100)] = $variables['items'][$image_style_mapping['image_mapping']]['url'] . ' ' . $multiplier;
+        break;
+    }
+  }
+  ksort($srcset);
+  $source_attributes = new Attribute([
+    'srcset' => implode(', ', array_unique($srcset)),
+  ]);
+  $media_query = trim($breakpoint->getMediaQuery());
+  if (!empty($media_query)) {
+    $source_attributes->setAttribute('media', $media_query);
+  }
+  if (count(array_unique($derivative_mime_types)) == 1) {
+    $source_attributes->setAttribute('type', $derivative_mime_types[0]);
+  }
+  if (!empty($sizes)) {
+    $source_attributes->setAttribute('sizes', implode(',', array_unique($sizes)));
+  }
+  return $source_attributes;
 }

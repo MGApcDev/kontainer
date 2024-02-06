@@ -240,6 +240,14 @@ interface KontainerServiceInterface {
   public function isRemoteMediaSource(): bool;
 
   /**
+   * Returns the ID of default CDN Image conversion template.
+   *
+   * @return string
+   *   ID of CdnImageConversion entity or empty if not set.
+   */
+  public function getDefaultCdnConversionTemplateId(): string;
+
+  /**
    * Creates a Drupal file entity from the downloaded Kontainer file.
    *
    * @param string $assetUrl
@@ -256,5 +264,10 @@ interface KontainerServiceInterface {
    * @throws \Exception
    */
   public function createFile(string $assetUrl, bool $uri = FALSE);
+
+  /**
+   * Invalidates Media entities of type that have Kontainer CDN as source field.
+   */
+  public function invalidateKontainerCdnSourcedMediaEntities(): void;
 
 }

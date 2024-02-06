@@ -78,6 +78,14 @@ class KontainerConfigForm extends ConfigFormBase {
     ];
     if ($mediaSource === KontainerServiceInterface::KONTAINER_MEDIA_SOURCE_CDN_URL) {
       $form['kontainer_media_source']['#description'] = $this->kontainerService->getCdnImageConversionsRenderLink();
+      $imageConversionTemplate = $config->get('kontainer_cdn_conversion_fallback') ?? '';
+      $form['kontainer_cdn_conversion_fallback'] = [
+        '#type' => 'select',
+        '#title' => $this->t('CDN Image Conversion Fallback:'),
+        '#options' => $this->kontainerService->getCdnImageConversionsOptions(),
+        '#default_value' => $imageConversionTemplate,
+        '#description' => $this->t('Default CDN Image Conversion template to use for Responsive CDN Formatter.'),
+      ];
     }
     $form['usage_api_info'] = [
       '#markup' => '<h3>' . $this->t('File usage tracking') . '</h3><div>' .
@@ -132,11 +140,16 @@ class KontainerConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $this->configFactory->getEditable('kontainer.settings')
+    $kontainerSettings = $this->configFactory->getEditable('kontainer.settings');
+    if ($form_state->getValue('kontainer_cdn_conversion_fallback') !== $kontainerSettings->get('kontainer_cdn_conversion_fallback')) {
+      $this->kontainerService->invalidateKontainerCdnSourcedMediaEntities();
+    }
+    $kontainerSettings
       ->set('kontainer_url', $form_state->getValue('kontainer_url'))
       ->set('kontainer_media_source', $form_state->getValue('kontainer_media_source'))
       ->set('integration_id', $form_state->getValue('integration_id'))
       ->set('integration_secret', $form_state->getValue('integration_secret'))
+      ->set('kontainer_cdn_conversion_fallback', $form_state->getValue('kontainer_cdn_conversion_fallback'))
       ->save();
     parent::submitForm($form, $form_state);
   }
