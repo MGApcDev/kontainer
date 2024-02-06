@@ -62,7 +62,11 @@
           }
         });
         ajax.execute().then(function (response) {
-          if (response.media_label !== null && response.media_id !== null && response.kontainer_file_id !== null) {
+          // Refresh Media Library widget if response comes from it.
+          if (activeEl.getAttribute('data-kontainer-type') === 'media-library') {
+            activeEl.closest('form').querySelector('input[type="submit"]').click();
+          }
+          else if (response.media_label !== null && response.media_id !== null && response.kontainer_file_id !== null) {
             activeEl.previousElementSibling.getElementsByTagName('input')[0].value = response.media_label + ' (' + response.media_id + ')';
             activeEl.nextElementSibling.value = response.kontainer_file_id;
           }

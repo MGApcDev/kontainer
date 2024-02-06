@@ -12,6 +12,8 @@ services:
       - '@entity_usage.usage'
       - '@state'
       - '@entity_field.manager'
+      - '@router.route_provider'
+      - '@csrf_token'
   logger.channel.kontainer:
     parent: logger.channel_base
     arguments: ['kontainer']

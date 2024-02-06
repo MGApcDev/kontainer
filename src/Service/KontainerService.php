@@ -2,6 +2,7 @@
 
 namespace Drupal\kontainer\Service;
 
+use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -10,6 +11,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
@@ -100,13 +102,27 @@ class KontainerService implements KontainerServiceInterface {
   protected EntityFieldManagerInterface $entityFieldManager;
 
   /**
+   * Service "router.route_provider".
+   *
+   * @var \Drupal\Core\Routing\RouteProviderInterface
+   */
+  protected RouteProviderInterface $routeProvider;
+
+  /**
+   * Service "csrf_token".
+   *
+   * @var \Drupal\Core\Access\CsrfTokenGenerator
+   */
+  protected CsrfTokenGenerator $csrfTokenGenerator;
+
+  /**
    * Upload directory for files from Kontainer.
    *
    * @var string
    */
   protected string $uploadDirectory = 'public://Kontainer';
 
-  public function __construct(ModuleHandlerInterface $moduleHandler, ConfigFactoryInterface $configFactory, FileSystemInterface $fileSystem, EntityTypeManagerInterface $entityTypeManager, AccountProxyInterface $currentUser, TranslationInterface $stringTranslation, LoggerInterface $logger, EntityUsageInterface $entityUsage, StateInterface $state, EntityFieldManagerInterface $entityFieldManager) {
+  public function __construct(ModuleHandlerInterface $moduleHandler, ConfigFactoryInterface $configFactory, FileSystemInterface $fileSystem, EntityTypeManagerInterface $entityTypeManager, AccountProxyInterface $currentUser, TranslationInterface $stringTranslation, LoggerInterface $logger, EntityUsageInterface $entityUsage, StateInterface $state, EntityFieldManagerInterface $entityFieldManager, RouteProviderInterface $routeProvider, CsrfTokenGenerator $csrfTokenGenerator) {
     $this->moduleHandler = $moduleHandler;
     $this->configFactory = $configFactory;
     $this->fileSystem = $fileSystem;
@@ -117,6 +133,8 @@ class KontainerService implements KontainerServiceInterface {
     $this->entityUsage = $entityUsage;
     $this->state = $state;
     $this->entityFieldManager = $entityFieldManager;
+    $this->routeProvider = $routeProvider;
+    $this->csrfTokenGenerator = $csrfTokenGenerator;
   }
 
   /**
@@ -450,6 +468,79 @@ class KontainerService implements KontainerServiceInterface {
   }
 
   /**
+   * {@inheritDoc}
+   */
+  public function buildKontainerSelectButtonArray(string $type, array $attributes): array {
+    $createKontainerMediaPath = $this->routeProvider
+      ->getRouteByName('kontainer.create_media')
+      ->getPath();
+    $createKontainerMediaPathTrimmed = ltrim($createKontainerMediaPath, '/');
+    $csrfToken = $this->csrfTokenGenerator->get($createKontainerMediaPathTrimmed);
+    $output = [
+      '#type' => $type,
+      '#value' => 'Kontainer select',
+      '#attributes' => $attributes,
+      '#attached' => [
+        'library' => 'kontainer/kontainer-lib',
+        'drupalSettings' => [
+          'ajaxTrustedUrl' => [$createKontainerMediaPath . '?token=' . $csrfToken => TRUE],
+          'kontainer' => [
+            'kontainerUrl' => $this->configFactory
+              ->get('kontainer.settings')
+              ->get('kontainer_url'),
+            'token' => $csrfToken,
+            'createMediaPath' => $createKontainerMediaPathTrimmed,
+          ],
+        ],
+      ],
+      '#weight' => 10,
+    ];
+    // Special case for Media Library Widget.
+    if ($type === 'html_tag') {
+      $output['#tag'] = 'button';
+    }
+    return $output;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function canModuleBeUninstalled(): bool {
+    $query = $this->entityTypeManager
+      ->getStorage('media')
+      ->getQuery();
+    $mediaTypes = [];
+    $mediaTypes[] = self::CDN_MEDIA_TYPE_NAME;
+    foreach (self::MEDIA_TYPES_MAPPING as $mediaTypeId) {
+      $mediaTypes[] = $mediaTypeId;
+    }
+    $entities = $query
+      ->condition('bundle', $mediaTypes, 'IN')
+      ->accessCheck(FALSE)
+      ->execute();
+    if (empty($entities)) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function invalidateKontainerCdnSourcedMediaEntities(): void {
+    $mediaBundles = $this->entityTypeManager->getStorage('media_type')->loadMultiple();
+    foreach ($mediaBundles as $bundle) {
+      $sourceField = $bundle->getSource()->getSourceFieldDefinition($bundle);
+      if ($sourceField && $sourceField->getType() === 'kontainer_cdn') {
+        $mediaEntities = $this->entityTypeManager->getStorage('media')->loadByProperties(['bundle' => $bundle->id()]);
+        foreach ($mediaEntities as $mediaEntity) {
+          Cache::invalidateTags($mediaEntity->getCacheTags());
+        }
+      }
+    }
+  }
+
+  /**
    * Returns the top host of the paragraph.
    *
    * If NULL is returned, the paragraph is orphaned (at some level).
@@ -608,7 +699,7 @@ class KontainerService implements KontainerServiceInterface {
    * @return array
    *   Array with media type field values.
    */
-  public function generateRemoteMediaValues(int $kontainerFileId, string $assetType, ?string $assetName, string $sourceFieldName, string $assetUrlBaseName, string $assetUrl): array {
+  private function generateRemoteMediaValues(int $kontainerFileId, string $assetType, ?string $assetName, string $sourceFieldName, string $assetUrlBaseName, string $assetUrl): array {
     return [
       'bundle' => self::CDN_MEDIA_TYPE_NAME,
       'name' => $assetName,
@@ -622,22 +713,6 @@ class KontainerService implements KontainerServiceInterface {
         'uri' => $assetUrl,
       ],
     ];
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public function invalidateKontainerCdnSourcedMediaEntities(): void {
-    $mediaBundles = $this->entityTypeManager->getStorage('media_type')->loadMultiple();
-    foreach ($mediaBundles as $bundle) {
-      $sourceField = $bundle->getSource()->getSourceFieldDefinition($bundle);
-      if ($sourceField && $sourceField->getType() === 'kontainer_cdn') {
-        $mediaEntities = $this->entityTypeManager->getStorage('media')->loadByProperties(['bundle' => $bundle->id()]);
-        foreach ($mediaEntities as $mediaEntity) {
-          Cache::invalidateTags($mediaEntity->getCacheTags());
-        }
-      }
-    }
   }
 
   /**

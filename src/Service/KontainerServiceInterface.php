@@ -270,4 +270,30 @@ interface KontainerServiceInterface {
    */
   public function invalidateKontainerCdnSourcedMediaEntities(): void;
 
+  /**
+   * Builds an array for Kontainer Select button form element.
+   *
+   * @param string $type
+   *   Type of element.
+   * @param array $attributes
+   *   Array of element attributes.
+   *
+   * @return array
+   *   Build array for the element.
+   */
+  public function buildKontainerSelectButtonArray(string $type, array $attributes): array;
+
+  /**
+   * Checks if there are any entities of Kontainer Media types left.
+   *
+   * @return bool
+   *   TRUE if it can, FALSE otherwise.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * Thrown if the entity type doesn't exist.
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * Thrown if the storage handler couldn't be loaded.
+   */
+  public function canModuleBeUninstalled(): bool;
+
 }

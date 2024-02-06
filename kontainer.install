@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function kontainer_uninstall() {
+  \Drupal::configFactory()->getEditable('kontainer.settings')->delete();
+  $entity_type_manager = \Drupal::entityTypeManager();
+  // Delete Cdn Image Conversion entities.
+  $entity_type_manager->getStorage('cdn_image_conversion')->delete($entity_type_manager->getStorage('cdn_image_conversion')->loadMultiple());
+  // Delete Kontainer Media types.
+  /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+  $kontainer_service = \Drupal::service('kontainer_service');
+  $kontainer_media_types = $kontainer_service::MEDIA_TYPES_MAPPING;
+  $kontainer_media_types[$kontainer_service::KONTAINER_MEDIA_SOURCE_CDN_URL] = $kontainer_service::CDN_MEDIA_TYPE_NAME;
+  foreach ($kontainer_media_types as $name) {
+    $media_type = $entity_type_manager->getStorage('media_type')->load($name);
+    $media_type->delete();
+  }
+  // Remove 'kontainer_media_reference' field from any entity.
+  $fields = \Drupal::entityTypeManager()
+    ->getStorage('field_config')
+    ->loadByProperties(['field_name' => 'kontainer_media_reference']);
+  foreach ($fields as $field) {
+    $field->delete();
+  }
+
+}

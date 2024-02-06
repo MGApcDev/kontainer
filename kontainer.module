@@ -313,3 +313,51 @@ function _kontainer_cdn_image_build_source_attributes(array $variables, Breakpoi
   }
   return $source_attributes;
 }
+
+/**
+ * Implements hook_form_alter().
+ */
+function kontainer_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+  $kontainer_service = \Drupal::service('kontainer_service');
+  if ($form_id === 'views_exposed_form') {
+    $form_state_storage = $form_state->getStorage();
+    if (array_key_exists('view', $form_state_storage)) {
+      /** @var \Drupal\views\ViewExecutable $view */
+      $view = $form_state_storage['view'];
+      $query_parameters = $view->getRequest()->query->all();
+      if (array_key_exists('widget_id', $query_parameters) && $query_parameters['widget_id'] === 'kontainer_media_library_widget') {
+        $form['actions']['kontainer'] = $kontainer_service->buildKontainerSelectButtonArray('html_tag', [
+          'data-kontainer-selector' => 'open-kontainer',
+          'data-kontainer-type' => 'media-library',
+          'type' => 'button',
+          'class' => 'button',
+        ]);
+      }
+    }
+  }
+  elseif ($form_id === 'system_modules_uninstall') {
+    if (array_key_exists('#validation_reasons', $form['modules']['kontainer'])) {
+      unset($form['modules']['kontainer']['#validation_reasons']);
+    }
+    if ($kontainer_service->canModuleBeUninstalled()) {
+      $form['uninstall']['kontainer']['#disabled'] = FALSE;
+    }
+    else {
+      $form['modules']['kontainer']['#validation_reasons'][] = t('Module cannot be uninstalled until there are media entities of Kontainer types existing.');
+    }
+  }
+}
+
+/**
+ * Implements hook_module_preuninstall().
+ */
+function kontainer_module_preuninstall($module) {
+  if ($module === 'kontainer') {
+    /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
+    $kontainer_service = \Drupal::service('kontainer_service');
+    if (!$kontainer_service->canModuleBeUninstalled()) {
+      throw new \Exception('Module cannot be uninstalled until there are media entities of Kontainer types existing.');
+    }
+  }
+}
