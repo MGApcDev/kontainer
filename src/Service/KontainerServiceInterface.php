@@ -290,9 +290,9 @@ interface KontainerServiceInterface {
    *   TRUE if it can, FALSE otherwise.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   * Thrown if the entity type doesn't exist.
+   *   Thrown if the entity type doesn't exist.
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * Thrown if the storage handler couldn't be loaded.
+   *   Thrown if the storage handler couldn't be loaded.
    */
   public function canModuleBeUninstalled(): bool;
 
