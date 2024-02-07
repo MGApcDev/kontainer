@@ -145,6 +145,7 @@ class KontainerService implements KontainerServiceInterface {
     $assetUrl = $assetData['thumbnailUrl'] ?? ($assetData['url'] ?? NULL);
     $assetName = $assetData['fileName'] ?? NULL;
     $assetKontainerFileId = $assetData['fileId'] ?? NULL;
+    $assetAlt = $assetData['alt'] ?? NULL;
     $remoteMediaSource = $this->isRemoteMediaSource();
     if (empty($assetUrl)) {
       throw new \Exception('No file url provided from Kontainer.');
@@ -164,10 +165,9 @@ class KontainerService implements KontainerServiceInterface {
       if (empty($assetUrlBaseName)) {
         throw new \Exception('No Kontainer URL base name provided from Kontainer.');
       }
-      $mediaValues = $this->generateRemoteMediaValues($assetKontainerFileId, $assetType, $assetName, $sourceFieldName, $assetUrlBaseName, $assetUrl);
+      $mediaValues = $this->generateRemoteMediaValues($assetKontainerFileId, $assetType, $assetName, $sourceFieldName, $assetUrlBaseName, $assetUrl, $assetAlt);
     }
     else {
-      $assetAlt = $assetData['alt'] ?? NULL;
       $assetExtension = $assetData['extension'] ?? NULL;
       $this->validateMediaTypeExtensions($assetType, $sourceFieldName, $assetExtension);
       $fileId = $this->createFile($assetUrl);
@@ -695,23 +695,29 @@ class KontainerService implements KontainerServiceInterface {
    *   Kontainer asset URL base name.
    * @param string $assetUrl
    *   Kontainer asset URL.
+   * @param null|string $assetAlt
+   *   Kontainer asset alt text.
    *
    * @return array
    *   Array with media type field values.
    */
-  private function generateRemoteMediaValues(int $kontainerFileId, string $assetType, ?string $assetName, string $sourceFieldName, string $assetUrlBaseName, string $assetUrl): array {
+  private function generateRemoteMediaValues(int $kontainerFileId, string $assetType, ?string $assetName, string $sourceFieldName, string $assetUrlBaseName, string $assetUrl, ?string $assetAlt): array {
+    $sourceFieldValues = [
+      'media_type' => $assetType,
+      'kontainer_file_name' => $assetName,
+      'kontainer_file_id' => $kontainerFileId,
+      'base_uri' => $assetUrlBaseName,
+      'uri' => $assetUrl,
+    ];
+    if ($assetType === self::KONTAINER_IMAGE_TYPE) {
+      $sourceFieldValues['kontainer_file_alt'] = $assetAlt ?? $this->stringTranslation->translate('Kontainer image');
+    }
     return [
       'bundle' => self::CDN_MEDIA_TYPE_NAME,
       'name' => $assetName,
       'uid' => $this->currentUser->id(),
       'status' => TRUE,
-      $sourceFieldName => [
-        'media_type' => $assetType,
-        'kontainer_file_name' => $assetName,
-        'kontainer_file_id' => $kontainerFileId,
-        'base_uri' => $assetUrlBaseName,
-        'uri' => $assetUrl,
-      ],
+      $sourceFieldName => $sourceFieldValues,
     ];
   }
 

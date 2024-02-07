@@ -46,6 +46,7 @@
         hiddenFields[1].value = json.fileName;
         hiddenFields[2].value = json.fileId;
         hiddenFields[3].value = json.urlBaseName;
+        hiddenFields[4].value = json.alt;
       }
       else {
         let url = drupalSettings.kontainer.createMediaPath;

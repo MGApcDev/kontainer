@@ -195,8 +195,11 @@ class KontainerResponsiveCdnFormatter extends FormatterBase {
               $elements[$delta] = [
                 '#theme' => 'image',
                 '#uri' => $uri ?? $item->uri,
-                '#alt' => !empty($item->kontainer_file_name) ? $item->kontainer_file_name : $this->t('kontainer_image'),
+                '#alt' => !empty($item->kontainer_file_alt) ? $item->kontainer_file_alt : $this->t('kontainer_image'),
               ];
+              if (!empty($item->kontainer_file_name)) {
+                $elements[$delta]['#title'] = $item->kontainer_file_name;
+              }
               break;
             }
             $formattedItems = [];
@@ -218,12 +221,15 @@ class KontainerResponsiveCdnFormatter extends FormatterBase {
           $elements[$delta] = [
             '#theme' => 'responsive_kontainer_cdn_image',
             '#items' => $formattedItems,
-            '#alt' => !empty($item->kontainer_file_name) ? $item->kontainer_file_name : $this->t('kontainer_image'),
+            '#alt' => !empty($item->kontainer_file_alt) ? $item->kontainer_file_alt : $this->t('kontainer_image'),
             '#responsive_image_style_id' => $responsiveImageStyle ? $responsiveImageStyle->id() : '',
             '#cache' => [
               'tags' => $cacheTags,
             ],
           ];
+          if (!empty($item->kontainer_file_name)) {
+            $elements[$delta]['#title'] = $item->kontainer_file_name;
+          }
           break;
 
         case KontainerServiceInterface::KONTAINER_VIDEO_TYPE:
@@ -242,7 +248,7 @@ class KontainerResponsiveCdnFormatter extends FormatterBase {
           $elements[$delta] = [
             '#type' => 'link',
             '#url' => Url::fromUri($item->uri),
-            '#title' => $item->kontainer_file_name,
+            '#title' => $item->kontainer_file_name ?? $this->t('Kontainer item'),
           ];
       }
     }

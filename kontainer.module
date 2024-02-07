@@ -27,6 +27,7 @@ function kontainer_theme() {
         'items' => [],
         'responsive_image_style_id' => NULL,
         'alt' => NULL,
+        'title' => NULL,
       ],
     ],
   ];
@@ -244,6 +245,9 @@ function template_preprocess_responsive_kontainer_cdn_image(&$variables) {
   ];
   if (isset($variables['alt'])) {
     $variables['img_element']['#alt'] = $variables['alt'];
+  }
+  if (isset($variables['title'])) {
+    $variables['img_element']['#title'] = $variables['title'];
   }
   if (isset($variables['attributes'])) {
     $variables['img_element']['#attributes'] = $variables['attributes'];

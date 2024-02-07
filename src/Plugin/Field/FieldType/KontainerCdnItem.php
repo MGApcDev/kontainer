@@ -74,6 +74,9 @@ class KontainerCdnItem extends LinkItem {
       'base_uri' => DataDefinition::create('uri')
         ->setLabel(new TranslatableMarkup('Base URI'))
         ->setDescription(new TranslatableMarkup('The base URI of the media.')),
+      'kontainer_file_alt' => DataDefinition::create('string')
+        ->setLabel(new TranslatableMarkup('Kontainer file alt'))
+        ->setDescription(new TranslatableMarkup('Alternative text of the Kontainer file.')),
     ] + parent::propertyDefinitions($field_definition);
   }
 
@@ -100,6 +103,11 @@ class KontainerCdnItem extends LinkItem {
       ],
       'base_uri'   => [
         'description' => 'The base URI of the media.',
+        'type' => 'varchar',
+        'length' => 2048,
+      ],
+      'kontainer_file_alt' => [
+        'description' => 'Alternative text of the Kontainer file.',
         'type' => 'varchar',
         'length' => 2048,
       ],
