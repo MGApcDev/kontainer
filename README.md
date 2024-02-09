@@ -54,6 +54,8 @@ This module requires the following modules:
 * File (https://www.drupal.org/docs/8/core/modules/file)
 * Image (https://www.drupal.org/docs/core-modules-and-themes/core-modules/image-module)
 * Media (https://www.drupal.org/docs/8/core/modules/media)
+* Media Library https://www.drupal.org/docs/core-modules-and-themes/core-modules/media-library-module
+* Responsive Image (https://www.drupal.org/docs/8/core/modules/responsive-image)
 * Entity Usage (https://www.drupal.org/project/entity_usage)
 
 ## Instalation
