@@ -284,16 +284,24 @@ interface KontainerServiceInterface {
   public function buildKontainerSelectButtonArray(string $type, array $attributes): array;
 
   /**
-   * Checks if there are any entities of Kontainer Media types left.
+   * Returns the Kontainer media type names.
+   *
+   * @return array
+   *   Kontainer Media types machine names as array value.
+   */
+  public function getKontainerMediaTypeNames(): array;
+
+  /**
+   * Checks if any Kontainer media entities exist in the system.
    *
    * @return bool
-   *   TRUE if it can, FALSE otherwise.
+   *   TRUE if entities exist, FALSE otherwise.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    *   Thrown if the entity type doesn't exist.
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    *   Thrown if the storage handler couldn't be loaded.
    */
-  public function canModuleBeUninstalled(): bool;
+  public function kontainerEntitiesExist(): bool;
 
 }

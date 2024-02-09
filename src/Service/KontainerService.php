@@ -505,23 +505,24 @@ class KontainerService implements KontainerServiceInterface {
   /**
    * {@inheritDoc}
    */
-  public function canModuleBeUninstalled(): bool {
-    $query = $this->entityTypeManager
-      ->getStorage('media')
-      ->getQuery();
-    $mediaTypes = [];
+  public function getKontainerMediaTypeNames(): array {
     $mediaTypes[] = self::CDN_MEDIA_TYPE_NAME;
     foreach (self::MEDIA_TYPES_MAPPING as $mediaTypeId) {
       $mediaTypes[] = $mediaTypeId;
     }
-    $entities = $query
-      ->condition('bundle', $mediaTypes, 'IN')
+    return $mediaTypes;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function kontainerEntitiesExist(): bool {
+    return (bool) $this->entityTypeManager
+      ->getStorage('media')
+      ->getQuery()
+      ->condition('bundle', $this->getKontainerMediaTypeNames(), 'IN')
       ->accessCheck(FALSE)
       ->execute();
-    if (empty($entities)) {
-      return TRUE;
-    }
-    return FALSE;
   }
 
   /**

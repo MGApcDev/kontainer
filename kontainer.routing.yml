@@ -4,7 +4,7 @@ kontainer.admin.config:
     _form: '\Drupal\kontainer\Form\KontainerConfigForm'
     _title: 'Kontainer configuration'
   requirements:
-    _permission: 'administer Kontainer settings'
+    _permission: 'administer kontainer settings'
 
 kontainer.create_media:
   path: '/kontainer/create-media'
@@ -13,6 +13,13 @@ kontainer.create_media:
   requirements:
     _format: json
     _csrf_token: 'TRUE'
+
+kontainer.delete_media_types:
+  path: '/kontainer/delete-media-types'
+  defaults:
+    _controller: '\Drupal\kontainer\Controller\KontainerController::deleteKontainerMediaTypes'
+  requirements:
+    _permission: 'administer kontainer settings'
 
 kontainer.usage:
   path: '/kontainer/api/file-usages'

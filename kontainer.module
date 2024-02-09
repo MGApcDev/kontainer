@@ -13,7 +13,9 @@ use Drupal\Core\Entity\EntityMalformedException;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\Core\Template\Attribute;
+use Drupal\Core\Url;
 use Drupal\kontainer\Plugin\media\Source\KontainerMediaSourceInterface;
+use Drupal\kontainer\Service\KontainerServiceInterface;
 use Drupal\node\NodeInterface;
 
 /**
@@ -69,7 +71,7 @@ function kontainer_form_media_form_alter(array &$form, FormStateInterface $form_
     /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
     $kontainer_service = \Drupal::service('kontainer_service');
     if (!$kontainer_service->isRemoteMediaSource()) {
-      \Drupal::messenger()->addWarning('Kontainer CDN type can be used when Kontainer media source is set to CDN.');
+      \Drupal::messenger()->addWarning('Kontainer CDN type can only be added when Kontainer media source is set to CDN.');
       $form['actions']['submit']['#disabled'] = TRUE;
     }
     if ($form_id !== 'media_kontainer_cdn_add_form') {
@@ -97,7 +99,7 @@ function _kontainer_media_file_id_validate(&$form, FormStateInterface $form_stat
 }
 
 /**
- * Implements hook_form_BASE_FORM_ID_alter().
+ * Implements hook_form_FORM_ID_alter().
  */
 function kontainer_form_media_type_confirm_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_state->getFormObject()->getEntity()->getSource() instanceof KontainerMediaSourceInterface) {
@@ -341,27 +343,28 @@ function kontainer_form_alter(&$form, FormStateInterface $form_state, $form_id) 
     }
   }
   elseif ($form_id === 'system_modules_uninstall') {
-    if (array_key_exists('#validation_reasons', $form['modules']['kontainer'])) {
-      unset($form['modules']['kontainer']['#validation_reasons']);
+    if (\Drupal::entityTypeManager()->getStorage('media_type')->load(KontainerServiceInterface::CDN_MEDIA_TYPE_NAME)) {
+      $form['modules']['kontainer']['#validation_reasons'][] = t('Kontainer media types need to be deleted manually before uninstalling. You can do it by pressing <a href=":route_url">HERE</a>. If this step is executed, and the module is not uninstalled, the module functionality will be broken and require a clean installation.', [
+        ':route_url' => Url::fromRoute('kontainer.delete_media_types')->toString(),
+      ]);
     }
-    if ($kontainer_service->canModuleBeUninstalled()) {
-      $form['uninstall']['kontainer']['#disabled'] = FALSE;
-    }
-    else {
-      $form['modules']['kontainer']['#validation_reasons'][] = t('Module cannot be uninstalled until there are media entities of Kontainer types existing.');
+    if ($kontainer_service->kontainerEntitiesExist()) {
+      $form['modules']['kontainer']['#validation_reasons'][] = t('Module cannot be uninstalled until there are media entities of Kontainer Media types existing.');
     }
   }
 }
 
 /**
- * Implements hook_module_preuninstall().
+ * Implements hook_form_BASE_FORM_ID_alter().
  */
-function kontainer_module_preuninstall($module) {
-  if ($module === 'kontainer') {
-    /** @var \Drupal\kontainer\Service\KontainerServiceInterface $kontainer_service */
-    $kontainer_service = \Drupal::service('kontainer_service');
-    if (!$kontainer_service->canModuleBeUninstalled()) {
-      throw new \Exception('Module cannot be uninstalled until there are media entities of Kontainer types existing.');
+function kontainer_form_media_type_add_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Prevent users from creating new media types with a Kontainer media source
+  // plugin.
+  if (isset($form['source_dependent']['source']['#options'])) {
+    foreach ($form['source_dependent']['source']['#options'] as $name => $values) {
+      if (str_starts_with($name, 'kontainer')) {
+        unset($form['source_dependent']['source']['#options'][$name]);
+      }
     }
   }
 }
