@@ -8,7 +8,6 @@ use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\kontainer\Service\KontainerServiceInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -101,22 +100,6 @@ class KontainerController extends ControllerBase implements ContainerInjectionIn
     // supported. If the array consists of multiple items, only the first one
     // will be imported.
     return $assetData[0] ?? $assetData;
-  }
-
-  /**
-   * Deletes all Kontainer Media types.
-   *
-   * @return \Symfony\Component\HttpFoundation\RedirectResponse
-   *   Redirects to the Module uninstall page.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   * @throws \Drupal\Core\Entity\EntityStorageException
-   */
-  public function deleteKontainerMediaTypes(): RedirectResponse {
-    $mediaTypeStorage = $this->entityTypeManager()->getStorage('media_type');
-    $mediaTypeStorage->delete($mediaTypeStorage->loadMultiple($this->kontainerService->getKontainerMediaTypeNames()));
-    return new RedirectResponse('/admin/modules/uninstall');
   }
 
 }

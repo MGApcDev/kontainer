@@ -61,7 +61,7 @@ class KontainerAuth implements AuthenticationProviderInterface {
       $exploded = explode(':', base64_decode(substr($token, 6)), 2);
       if (2 == count($exploded)) {
         [$requestIntegrationId, $requestIntegrationSecret] = $exploded;
-        if ($configIntegrationId === $requestIntegrationId && $configIntegrationSecret === $requestIntegrationSecret) {
+        if (hash_equals($requestIntegrationId, $configIntegrationId) && hash_equals($requestIntegrationSecret, $configIntegrationSecret)) {
           // Use a fake role, for security reasons.
           return new UserSession(['roles' => ['kontainer_auth_role']]);
         }

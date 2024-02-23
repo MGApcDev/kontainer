@@ -17,7 +17,8 @@ kontainer.create_media:
 kontainer.delete_media_types:
   path: '/kontainer/delete-media-types'
   defaults:
-    _controller: '\Drupal\kontainer\Controller\KontainerController::deleteKontainerMediaTypes'
+    _title: 'Kontainer Media Types Delete Confirm'
+    _form: 'Drupal\kontainer\Form\MediaTypesDeleteConfirmForm'
   requirements:
     _permission: 'administer kontainer settings'
 
