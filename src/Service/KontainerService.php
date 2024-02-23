@@ -211,7 +211,7 @@ class KontainerService implements KontainerServiceInterface {
       $config = $this->configFactory->get($mediaTypeConfigName);
       if (!empty($config)) {
         $dependencies = $config->get('dependencies');
-        if (!empty($dependencies['module'][0]) && $dependencies['module'][0] === $moduleName) {
+        if (!empty($dependencies['module']) && in_array($moduleName, $dependencies['module'])) {
           $mediaTypesWithDependency[$config->get('id')] = $config->get('label');
         }
       }
