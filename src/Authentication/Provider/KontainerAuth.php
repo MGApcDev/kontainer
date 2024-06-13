@@ -30,13 +30,17 @@ class KontainerAuth implements AuthenticationProviderInterface {
   public function __construct(ConfigFactoryInterface $config_factory, RouteProviderInterface $routeProvider) {
     $this->configFactory = $config_factory;
     $this->routeProvider = $routeProvider;
+      \Drupal::logger('kontainer')->warning('KontainerAuth::__construct');
+
   }
 
   /**
    * {@inheritdoc}
    */
   public function applies(Request $request) {
-    $kontainerUsagePath = $this->routeProvider
+      \Drupal::logger('kontainer')->warning('KontainerAuth::applies');
+
+      $kontainerUsagePath = $this->routeProvider
       ->getRouteByName('kontainer.usage')
       ->getPath();
     return $kontainerUsagePath === $request->getPathInfo() && $request->headers->get('Authorization');
@@ -46,7 +50,9 @@ class KontainerAuth implements AuthenticationProviderInterface {
    * {@inheritdoc}
    */
   public function authenticate(Request $request) {
-    $kontainerSettings = $this->configFactory
+      \Drupal::logger('kontainer')->warning('KontainerAuth::authenticate');
+
+      $kontainerSettings = $this->configFactory
       ->get('kontainer.settings');
     $configIntegrationId = $kontainerSettings->get('integration_id');
     $configIntegrationSecret = $kontainerSettings->get('integration_secret');
