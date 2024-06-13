@@ -70,11 +70,16 @@ class KontainerAuth implements AuthenticationProviderInterface {
         [$requestIntegrationId, $requestIntegrationSecret] = $exploded;
         if (hash_equals($configIntegrationId, $requestIntegrationId) && hash_equals($configIntegrationSecret, $requestIntegrationSecret)) {
           // Use a fake role, for security reasons.
-          return new UserSession(['roles' => ['kontainer_auth_role']]);
+            \Drupal::logger('kontainer')->warning('Authentication success');
+
+            return new UserSession(['roles' => ['kontainer_auth_role']]);
         }
       }
     }
-    return NULL;
+      \Drupal::logger('kontainer')->warning('Authentication failed');
+
+
+      return NULL;
   }
 
 }
