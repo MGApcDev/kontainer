@@ -54,6 +54,10 @@ class KontainerAuth implements AuthenticationProviderInterface {
       return NULL;
     }
     $token = $request->headers->get('Authorization');
+      \Drupal::logger('kontainer')->warning('Debugging incoming request:');
+      \Drupal::logger('kontainer')->warning($token);
+      \Drupal::logger('kontainer')->warning($configIntegrationId);
+      \Drupal::logger('kontainer')->warning($configIntegrationSecret);
     // The Symfony way
     // https://github.com/symfony/http-foundation/blob/6.3/ServerBag.php,
     // following this scheme https://datatracker.ietf.org/doc/html/rfc7617.
