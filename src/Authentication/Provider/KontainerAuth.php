@@ -46,42 +46,27 @@ class KontainerAuth implements AuthenticationProviderInterface {
    * {@inheritdoc}
    */
   public function authenticate(Request $request) {
-      \Drupal::logger('kontainer')->warning('KontainerAuth::authenticate');
-
       $kontainerSettings = $this->configFactory
       ->get('kontainer.settings');
     $configIntegrationId = $kontainerSettings->get('integration_id');
     $configIntegrationSecret = $kontainerSettings->get('integration_secret');
     if (empty($configIntegrationId) || empty($configIntegrationSecret)) {
-        \Drupal::logger('kontainer')->warning('Empty config info');
-
         return NULL;
     }
     $token = $request->headers->get('Authorization');
-      \Drupal::logger('kontainer')->warning($token);
-      \Drupal::logger('kontainer')->warning($configIntegrationId);
-      \Drupal::logger('kontainer')->warning($configIntegrationSecret);
     // The Symfony way
     // https://github.com/symfony/http-foundation/blob/6.3/ServerBag.php,
     // following this scheme https://datatracker.ietf.org/doc/html/rfc7617.
     if (0 === stripos($token, 'bearer ')) {
       $exploded = explode(':', base64_decode(substr($token, 6)), 2);
-        \Drupal::logger('kontainer')->warning('Found in token:');
-        \Drupal::logger('kontainer')->warning($exploded[0]);
-        \Drupal::logger('kontainer')->warning($exploded[1]);
-
         if (2 == count($exploded)) {
-            \Drupal::logger('kontainer')->warning('...inside count');
         [$requestIntegrationId, $requestIntegrationSecret] = $exploded;
         if (hash_equals($configIntegrationId, $requestIntegrationId) && hash_equals($configIntegrationSecret, $requestIntegrationSecret)) {
           // Use a fake role, for security reasons.
-            \Drupal::logger('kontainer')->warning('Authentication success');
-
             return new UserSession(['roles' => ['kontainer_auth_role']]);
         }
       }
     }
-      \Drupal::logger('kontainer')->warning('Authentication failed');
 
 
       return NULL;
