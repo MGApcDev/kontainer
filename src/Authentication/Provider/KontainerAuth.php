@@ -66,7 +66,12 @@ class KontainerAuth implements AuthenticationProviderInterface {
     // following this scheme https://datatracker.ietf.org/doc/html/rfc7617.
     if (0 === stripos($token, 'bearer ')) {
       $exploded = explode(':', base64_decode(substr($token, 6)), 2);
-      if (2 == count($exploded)) {
+        \Drupal::logger('kontainer')->warning('Found in token:');
+        \Drupal::logger('kontainer')->warning($exploded[0]);
+        \Drupal::logger('kontainer')->warning($exploded[1]);
+
+        if (2 == count($exploded)) {
+            \Drupal::logger('kontainer')->warning('...inside count');
         [$requestIntegrationId, $requestIntegrationSecret] = $exploded;
         if (hash_equals($configIntegrationId, $requestIntegrationId) && hash_equals($configIntegrationSecret, $requestIntegrationSecret)) {
           // Use a fake role, for security reasons.
